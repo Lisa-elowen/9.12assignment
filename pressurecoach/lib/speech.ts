@@ -74,30 +74,48 @@ export class SpeechInput {
 
 /* ── 面试官语音(TTS)─────────────────────────────── */
 
-let currentVoice: SpeechSynthesisVoice | null = null;
+const GOOD_VOICES = [
+  "xiaoxiao", "yunxi", "xiaoyi", "yunjian", "yunyang",
+  "yunfeng", "yunhao", "yunxia", "xiaobei", "natural", "online",
+];
+const BAD_VOICES = ["huihui", "kangkang", "yaoyao", "tingting"];
 
-/** 初始化:挑一个中文音色(音色列表异步加载,监听变化) */
-export function initVoices() {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const pick = () => {
-    const voices = window.speechSynthesis.getVoices();
-    currentVoice =
-      voices.find((v) => v.lang === "zh-CN") ??
-      voices.find((v) => v.lang.toLowerCase().startsWith("zh")) ??
-      null;
-  };
-  pick();
-  window.speechSynthesis.addEventListener?.("voiceschanged", pick);
+function voiceScore(v: SpeechSynthesisVoice): number {
+  const n = v.name.toLowerCase();
+  if (BAD_VOICES.some((b) => n.includes(b))) return 0;
+  if (GOOD_VOICES.some((g) => n.includes(g))) return 3;
+  if (n.includes("online")) return 2;
+  return 1;
+}
+
+/** 中文音色列表,自然音色排在前面(晓晓/云希等) */
+export function listChineseVoices(): SpeechSynthesisVoice[] {
+  if (typeof window === "undefined" || !window.speechSynthesis) return [];
+  return window.speechSynthesis
+    .getVoices()
+    .filter((v) => v.lang.toLowerCase().startsWith("zh"))
+    .sort((a, b) => voiceScore(b) - voiceScore(a));
+}
+
+/** 音色短名,如 "Xiaoxiao Online" */
+export function shortVoiceName(v: SpeechSynthesisVoice): string {
+  return v.name
+    .replace(/^Microsoft /i, "")
+    .replace(/\(Natural\)/i, "")
+    .replace(/\(Mainland\)/i, "")
+    .replace(/\s*-\s*Chinese.*$/i, "")
+    .trim();
 }
 
 /** 朗读面试官的问题(会先停掉上一次朗读) */
-export function speak(text: string) {
+export function speak(text: string, voice?: SpeechSynthesisVoice | null) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "zh-CN";
-  u.rate = 1.05;
-  if (currentVoice) u.voice = currentVoice;
+  u.rate = 1.02;
+  u.pitch = 1;
+  if (voice) u.voice = voice;
   window.speechSynthesis.speak(u);
 }
 
