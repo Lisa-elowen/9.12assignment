@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import {
   MODES,
   Mode,
@@ -369,6 +369,40 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
               第 {Math.min(round, TOTAL_ROUNDS)}/{TOTAL_ROUNDS} 轮
             </span>
           </div>
+          {/* ClawsGO 风:轮次步骤时间线 */}
+          <div className="mt-2 flex items-start">
+            {Array.from({ length: TOTAL_ROUNDS }, (_, i) => {
+              const done = i < turns.length;
+              const current = i === turns.length;
+              return (
+                <Fragment key={i}>
+                  {i > 0 && <div className="step-line mt-1" />}
+                  <div className="flex shrink-0 flex-col items-center gap-1">
+                    <div
+                      className={`step-dot ${
+                        done
+                          ? "bg-emerald-400"
+                          : current
+                          ? "animate-pulse bg-rose-500"
+                          : "bg-[#262d3f]"
+                      }`}
+                    />
+                    <span
+                      className={`text-[9px] leading-none ${
+                        done
+                          ? "text-emerald-400"
+                          : current
+                          ? "font-semibold text-rose-400"
+                          : "text-[#5b6275]"
+                      }`}
+                    >
+                      {inferTag(i + 1)}
+                    </span>
+                  </div>
+                </Fragment>
+              );
+            })}
+          </div>
         </div>
       </header>
 
@@ -411,6 +445,20 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
                     👁 面试官观察:{t.note}
                   </div>
                 )}
+                {/* 回答耗时 meta(ClawsGO 风 step 计时) */}
+                <div className="mt-1 flex flex-wrap justify-end gap-1">
+                  <span className="meta-chip">⏱ 用时 {Math.round(t.durationSec)}s</span>
+                  {t.responseLatencySec != null && (
+                    <span className="meta-chip">
+                      犹豫 {t.responseLatencySec.toFixed(1)}s
+                    </span>
+                  )}
+                  {(t.interventions?.length ?? 0) > 0 && (
+                    <span className="meta-chip !text-rose-400">
+                      ⚡ 突发 ×{t.interventions!.length}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-base">
                 🧑‍🎓
@@ -514,8 +562,9 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
               : `(超过 ${latencyThreshold} 秒开始扣分)`}
           </div>
         )}
-        <div className="mb-2 text-xs text-[#5b6275]">
-          💡 保持「结论先行」,避免「其实 / 可能 / 大概」
+        <div className="mb-2 flex items-center gap-1.5 text-xs text-[#5b6275]">
+          💡 结论先行,避免「其实 / 可能 / 大概」
+          <span className="chip">卡住时想想首页的应急锦囊</span>
         </div>
         <textarea
           value={answer}

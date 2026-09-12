@@ -29,9 +29,21 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
       {/* Hero */}
       <section className="pt-6 pb-10 text-center">
         <h1 className="mx-auto max-w-xl text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
-          你知道自己会在
-          <span className="text-rose-500">哪个问题上失分</span>
-          吗?
+          {["你知道", "自己会在", ""].map((w, i) => (
+            <span
+              key={i}
+              className="word-in"
+              style={{ animationDelay: `${i * 0.12}s` }}
+            >
+              {w}{" "}
+            </span>
+          ))}
+          <span className="word-in text-rose-500" style={{ animationDelay: "0.36s" }}>
+            哪个问题上失分
+          </span>
+          <span className="word-in" style={{ animationDelay: "0.5s" }}>
+            {" "}吗?
+          </span>
         </h1>
         <p className="mx-auto mt-5 max-w-md text-base leading-relaxed text-[#8b93a7]">
           在正式面试前,让 AI 模拟一次真实高压面试,

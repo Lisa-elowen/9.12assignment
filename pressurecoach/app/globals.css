@@ -113,3 +113,40 @@ body {
   font-weight: 600;
   border-bottom: 1px dashed var(--accent2);
 }
+
+/* ClawsGO 风:hero 逐字入场 */
+@keyframes word-in {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.word-in {
+  display: inline-block;
+  animation: word-in 0.5s ease both;
+}
+
+/* 轮次步骤时间线 */
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.step-line {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+}
+
+/* 回答耗时 meta chip */
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
+  background: var(--panel2);
+  border: 1px solid var(--line);
+  color: var(--sub);
+  font-variant-numeric: tabular-nums;
+}
