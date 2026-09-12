@@ -16,8 +16,7 @@ import { analyzeAnswer } from "@/lib/analysis";
 import { offlineNextQuestion } from "@/lib/offline";
 import {
   isSpeechSupported,
-  listChineseVoices,
-  shortVoiceName,
+  pickInterviewerVoice,
   speak,
   SpeechInput,
   stopSpeaking,
@@ -64,8 +63,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const [hesitation, setHesitation] = useState(0);
   const [intervention, setIntervention] = useState<Intervention | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [voiceIdx, setVoiceIdx] = useState(0);
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const qStartRef = useRef<number>(Date.now());
   const responseStartedRef = useRef(false);
   const latencyRef = useRef(0);
@@ -202,24 +200,26 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     };
   }, []);
 
-  // 面试官语音:加载中文音色(压力模式男声优先,语气低沉急促)
+  // 面试官语音:固定严肃男声(不可切换——真实面试你没法换面试官);压力模式语气低沉急促
   useEffect(() => {
-    const load = () => setVoices(listChineseVoices(mode === "pressure"));
+    const load = () => {
+      voiceRef.current = pickInterviewerVoice();
+    };
     load();
     window.speechSynthesis?.addEventListener?.("voiceschanged", load);
     return () => {
       window.speechSynthesis?.removeEventListener?.("voiceschanged", load);
       stopSpeaking();
     };
-  }, [mode]);
+  }, []);
   const speakCurrent = useCallback(
     (text: string) =>
       speak(
         text,
-        voices[voiceIdx] ?? null,
-        mode === "pressure" ? { pitch: 0.85, rate: 1.12 } : { pitch: 1, rate: 1.02 }
+        voiceRef.current,
+        mode === "pressure" ? { pitch: 0.85, rate: 1.12 } : { pitch: 0.95, rate: 1.05 }
       ),
-    [voices, voiceIdx, mode]
+    [mode]
   );
   useEffect(() => {
     if (question && !thinking && autoSpeak) {
@@ -409,23 +409,6 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
             >
               朗读 {autoSpeak ? "开" : "关"}
             </button>
-            {voices.length > 1 && (
-              <button
-                onClick={() => {
-                  const next = (voiceIdx + 1) % voices.length;
-                  setVoiceIdx(next);
-                  speak(
-                    question?.question ?? "稳面。于压力之中,面不改色。",
-                    voices[next] ?? null,
-                    mode === "pressure" ? { pitch: 0.85, rate: 1.12 } : undefined
-                  );
-                }}
-                className="chip shrink-0 cursor-pointer transition-colors hover:border-[#d41111]/50 hover:text-[#d41111]"
-                title="切换面试官音色(点击试听)"
-              >
-                音色 {shortVoiceName(voices[voiceIdx] ?? voices[0])}
-              </button>
-            )}
           </div>
           <div className="mt-1.5 flex items-center gap-2">
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#e7e5e4]">
