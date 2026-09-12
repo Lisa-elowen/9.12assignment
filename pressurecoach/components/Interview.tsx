@@ -70,10 +70,14 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const responseStartedRef = useRef(false);
   const latencyRef = useRef(0);
   const speechRef = useRef<SpeechInput | null>(null);
+  const recordingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const interventionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interventionLogRef = useRef<string[]>([]);
   const usedKindsRef = useRef<Set<string>>(new Set());
+  // 语音说完自动提交:停顿检测 + 结束语检测
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const doSubmitRef = useRef<(timedOut?: boolean) => Promise<void>>(async () => {});
 
   const round = turns.length + 1;
   const sc = SCENARIOS[scenario];
@@ -179,15 +183,30 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   useEffect(() => {
     if (isSpeechSupported()) {
       const sp = new SpeechInput();
+      const END_MARKERS = ["回答完毕", "回答完了", "以上", "就这样", "完毕", "说完了"];
       sp.onUpdate = (text) => {
         if (text.trim()) markResponseStarted();
         setAnswer(text);
+        // 结束语 → 立即提交;否则停顿 3 秒视为说完,自动提交(真实面试里面试官会接话)
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        const trimmed = text.trim();
+        if (!trimmed) return;
+        if (END_MARKERS.some((m) => trimmed.endsWith(m))) {
+          doSubmitRef.current(false);
+          return;
+        }
+        silenceTimerRef.current = setTimeout(() => {
+          if (speechRef.current && recordingRef.current) {
+            doSubmitRef.current(false);
+          }
+        }, 3000);
       };
       sp.onEnd = () => setRecording(false);
       sp.onError = (msg) => setSpeechError(msg);
       speechRef.current = sp;
     }
     return () => {
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
       try {
         speechRef.current?.stop();
       } catch {
@@ -247,9 +266,11 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     if (!recording) {
       stopSpeaking();
       sp.start();
+      recordingRef.current = true;
       setRecording(true);
     } else {
       sp.stop();
+      recordingRef.current = false;
     }
   };
 
@@ -258,8 +279,10 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     const text = answer.trim();
     if (!text && !timedOut) return;
     stopSpeaking();
+    if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (recording) {
       speechRef.current?.stop();
+      recordingRef.current = false;
       setRecording(false);
     }
     const limit = timeLimitFor(mode, round);
@@ -335,6 +358,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   };
 
   const submit = () => doSubmit(false);
+  doSubmitRef.current = doSubmit;
 
   // 倒计时:题目出现即开始,制造时间压力
   useEffect(() => {
@@ -682,7 +706,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
             disabled={!answer.trim() || thinking || recording}
             className="btn-primary flex-1"
           >
-            {recording ? "录音中…" : round >= TOTAL_ROUNDS ? "提交并生成报告 →" : "提交回答 →"}
+            {recording ? "录音中 · 说完自动提交" : round >= TOTAL_ROUNDS ? "提交并生成报告 →" : "提交回答 →"}
           </button>
         </div>
         {turns.length >= 3 && round < TOTAL_ROUNDS && (
