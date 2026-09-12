@@ -2,6 +2,7 @@
 
 import { MODES, SCENARIOS, Session } from "@/lib/types";
 import { levelName } from "@/lib/analysis";
+import { EMERGENCY_TIPS } from "@/lib/emergency";
 
 interface Props {
   sessions: Session[];
@@ -89,6 +90,27 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
               </div>
               <div className="mt-2 text-sm font-semibold">{s.t}</div>
               <div className="mt-1 text-xs leading-relaxed text-[#8b93a7]">{s.d}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 应急锦囊 */}
+      <section className="mt-12">
+        <h2 className="text-lg font-bold">🧰 应急锦囊</h2>
+        <p className="mt-1 text-sm text-[#8b93a7]">
+          面试突发状况的应对措施——被问到不会的问题、突然换题、被质疑时怎么办。
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          {EMERGENCY_TIPS.map((t) => (
+            <div key={t.situation} className="card p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{t.icon}</span>
+                <span className="text-sm font-semibold">{t.situation}</span>
+              </div>
+              <div className="mt-2 text-sm leading-relaxed text-[#8b93a7]">
+                {t.action}
+              </div>
             </div>
           ))}
         </div>

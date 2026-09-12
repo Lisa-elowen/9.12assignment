@@ -133,6 +133,18 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
     turns.length > 0
       ? turns.reduce((s, t) => s + (t.responseLatencySec ?? 0), 0) / turns.length
       : 0;
+  const peakHR = Math.round(
+    60 + Math.max(0, ...report.curve.map((c) => c.value)) * 0.45
+  );
+  const breaks: string[] = [];
+  for (let i = 1; i < turns.length; i++) {
+    const drop = turns[i - 1].logicScore - turns[i].logicScore;
+    if (drop >= 1.5) {
+      breaks.push(
+        `第${i}→${i + 1}轮(${turns[i - 1].logicScore}→${turns[i].logicScore})`
+      );
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-5 pb-16">
@@ -165,6 +177,10 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
               {turns.length} 轮问答 ·{" "}
               {turns.reduce((s, t) => s + t.durationSec, 0).toFixed(0)} 秒 · 平均开口犹豫{" "}
               {avgLatency.toFixed(1)}s
+              {typeof report.recoverySec === "number" && (
+                <span> · 被打断后恢复 {report.recoverySec.toFixed(1)}s</span>
+              )}
+              <span> · 峰值心率估算 {peakHR}bpm</span>
               {turns.some((t) => t.timedOut) && (
                 <span className="ml-1 text-rose-400">
                   · {turns.filter((t) => t.timedOut).length} 轮超时
@@ -234,6 +250,11 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
         <div className="mt-3">
           <PressureChart data={report.curve} />
         </div>
+        {breaks.length > 0 && (
+          <p className="mt-2 text-xs leading-relaxed text-[#8b93a7]">
+            ⚡ 逻辑断裂点:{breaks.join(" · ")}
+          </p>
+        )}
       </section>
 
       {/* 触发点 */}

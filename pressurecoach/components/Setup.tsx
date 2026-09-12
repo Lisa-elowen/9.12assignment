@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { MODES, Mode, SCENARIOS, Scenario } from "@/lib/types";
+import { MODES, Mode, PERSONAS, Persona, SCENARIOS, Scenario } from "@/lib/types";
 
 interface Props {
-  onStart: (s: Scenario, m: Mode, resume: string) => void;
+  onStart: (s: Scenario, m: Mode, p: Persona, resume: string) => void;
   onBack: () => void;
 }
 
 export function Setup({ onStart, onBack }: Props) {
   const [scenario, setScenario] = useState<Scenario>("intern");
   const [mode, setMode] = useState<Mode>("pressure");
+  const [persona, setPersona] = useState<Persona>("pro");
   const [resume, setResume] = useState("");
 
   return (
@@ -81,9 +82,36 @@ export function Setup({ onStart, onBack }: Props) {
         })}
       </div>
 
+      {/* 面试官人格 */}
+      <h2 className="mt-8 text-sm font-semibold text-[#8b93a7]">
+        ③ 选择面试官性格
+      </h2>
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        {(Object.keys(PERSONAS) as Persona[]).map((key) => {
+          const p = PERSONAS[key];
+          const active = persona === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setPersona(key)}
+              className={`card card-hover p-4 text-left ${
+                active ? "border-rose-500/60 bg-rose-500/10" : ""
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">{p.icon}</span>
+                {active && <span className="chip border-rose-500/50 text-rose-400">已选</span>}
+              </div>
+              <div className="mt-2 font-semibold">{p.name}</div>
+              <div className="mt-1 text-xs leading-relaxed text-[#8b93a7]">{p.desc}</div>
+            </button>
+          );
+        })}
+      </div>
+
       {/* 简历 */}
       <h2 className="mt-8 text-sm font-semibold text-[#8b93a7]">
-        ③ 粘贴简历 / 项目描述
+        ④ 粘贴简历 / 项目描述
         <span className="ml-1 font-normal text-[#5b6275]">(可选)</span>
       </h2>
       <textarea
@@ -95,7 +123,7 @@ export function Setup({ onStart, onBack }: Props) {
       />
 
       <button
-        onClick={() => onStart(scenario, mode, resume)}
+        onClick={() => onStart(scenario, mode, persona, resume)}
         className="btn-primary mt-8 w-full text-lg"
       >
         进入面试舱 →

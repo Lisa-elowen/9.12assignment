@@ -1,14 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MODES, Mode, SCENARIOS, Scenario, TOTAL_ROUNDS, timeLimitFor, Turn } from "@/lib/types";
+import {
+  MODES,
+  Mode,
+  PERSONAS,
+  Persona,
+  SCENARIOS,
+  Scenario,
+  TOTAL_ROUNDS,
+  timeLimitFor,
+  Turn,
+} from "@/lib/types";
 import { analyzeAnswer } from "@/lib/analysis";
 import { offlineNextQuestion } from "@/lib/offline";
 import { isSpeechSupported, SpeechInput } from "@/lib/speech";
+import {
+  Intervention,
+  interventionChance,
+  interventionDelay,
+  rollIntervention,
+} from "@/lib/interventions";
 
 interface Props {
   scenario: Scenario;
   mode: Mode;
+  persona: Persona;
   resume: string;
   onFinish: (turns: Turn[], usedAI: boolean) => void;
   onQuit: () => void;
@@ -28,7 +45,7 @@ function inferTag(round: number): string {
   return "压力追问";
 }
 
-export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
+export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [question, setQuestion] = useState<NextQ | null>(null);
   const [thinking, setThinking] = useState(true);
@@ -38,26 +55,52 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
   const [offlineNotice, setOfflineNotice] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [hesitation, setHesitation] = useState(0);
+  const [intervention, setIntervention] = useState<Intervention | null>(null);
   const qStartRef = useRef<number>(Date.now());
   const responseStartedRef = useRef(false);
   const latencyRef = useRef(0);
   const speechRef = useRef<SpeechInput | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const interventionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interventionLogRef = useRef<string[]>([]);
+  const usedKindsRef = useRef<Set<string>>(new Set());
 
   const round = turns.length + 1;
   const sc = SCENARIOS[scenario];
   const md = MODES[mode];
+  const ps = PERSONAS[persona];
   // 犹豫阈值:超过即被扣分(压力模式更严)
   const latencyThreshold = mode === "pressure" ? 3 : 5;
 
-  // 首次输入(打字或语音)即记下犹豫时长
+  // 实时心率估算(语言压力信号 → 生理模拟;真实设备接入后替换)
+  const hr = Math.round(
+    Math.min(
+      165,
+      58 +
+        Math.min(hesitation, 20) * 3 +
+        (mode === "pressure" && timeLeft !== null && timeLeft <= 30 ? 18 : 0) +
+        (intervention ? 12 : 0) +
+        turns.reduce((s, t) => s + (t.interventions?.length ?? 0), 0) * 4
+    )
+  );
+
+  // 首次输入(打字或语音)即记下犹豫时长,并按概率埋一个突发干预
   const markResponseStarted = useCallback(() => {
     if (!responseStartedRef.current) {
       responseStartedRef.current = true;
       latencyRef.current = (Date.now() - qStartRef.current) / 1000;
       setHesitation(latencyRef.current);
+      if (Math.random() < interventionChance(mode, persona)) {
+        interventionTimerRef.current = setTimeout(() => {
+          const ev = rollIntervention(usedKindsRef.current as any);
+          usedKindsRef.current.add(ev.kind);
+          interventionLogRef.current.push(ev.label);
+          setIntervention(ev);
+          setTimeout(() => setIntervention(null), 8000);
+        }, interventionDelay(mode));
+      }
     }
-  }, []);
+  }, [mode, persona]);
 
   const fetchQuestion = useCallback(
     async (prevTurns: Turn[]): Promise<NextQ> => {
@@ -66,7 +109,7 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ scenario, mode, resume, turns: prevTurns, round: r }),
+          body: JSON.stringify({ scenario, mode, persona, resume, turns: prevTurns, round: r }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -101,7 +144,7 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
         note: o.note,
       };
     },
-    [scenario, mode, resume]
+    [scenario, mode, persona, resume]
   );
 
   // 首题
@@ -139,6 +182,13 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
       } catch {
         /* noop */
       }
+    };
+  }, []);
+
+  // 卸载时清理干预定时器
+  useEffect(() => {
+    return () => {
+      if (interventionTimerRef.current) clearTimeout(interventionTimerRef.current);
     };
   }, []);
 
@@ -194,6 +244,9 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
       latencySec > latencyThreshold && !timedOut
         ? `开场犹豫 ${latencySec.toFixed(1)} 秒;`
         : "";
+    const interventions = [...interventionLogRef.current];
+    const intNote =
+      interventions.length > 0 ? `遭遇${interventions.length}次突发:${interventions.join("/")};` : "";
     const turn: Turn = {
       question: question.question,
       answer: text,
@@ -208,11 +261,17 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
         ? "超时未作答"
         : timedOut
         ? `超时未答完:${m.note}`
-        : latencyNote + (question.note ?? m.note),
+        : latencyNote + intNote + (question.note ?? m.note),
       tag: question.tag,
       isChallenge: question.challenge,
       timedOut,
+      interventions,
     };
+    // 清理本轮干预状态
+    if (interventionTimerRef.current) clearTimeout(interventionTimerRef.current);
+    interventionLogRef.current = [];
+    usedKindsRef.current = new Set();
+    setIntervention(null);
     const newTurns = [...turns, turn];
     setTurns(newTurns);
     setAnswer("");
@@ -286,6 +345,17 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
               }`}
             >
               {md.icon} {md.name}
+            </span>
+            <span className="chip border-[#262d3f] text-[#8b93a7]">
+              {ps.icon} {ps.name}
+            </span>
+            <span
+              className={`chip shrink-0 tabular-nums ${
+                hr > 110 ? "animate-pulse border-rose-500/50 text-rose-400" : "border-[#262d3f] text-[#8b93a7]"
+              }`}
+              title="心率估算(基于犹豫时长与压力信号,真实手环接入后替换)"
+            >
+              ❤️ {hr}
             </span>
           </div>
           <div className="mt-1.5 flex items-center gap-2">
@@ -421,6 +491,12 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
         {mode === "pressure" && timeLeft !== null && timeLeft <= 30 && timeLeft > 0 && (
           <div className="mb-1.5 text-center text-xs font-medium text-rose-400">
             ⏳ 时间不等人——先给结论,细节后补
+          </div>
+        )}
+        {/* 突发干预:面试中的不可预测因素 */}
+        {intervention && (
+          <div className="mb-2 animate-pulse rounded-lg border border-rose-500/50 bg-rose-500/10 px-3 py-2 text-sm leading-relaxed text-rose-300">
+            ⚡ 突发情况:{intervention.text}
           </div>
         )}
         {/* 犹豫计时:开口前的沉默会被记录并扣分 */}

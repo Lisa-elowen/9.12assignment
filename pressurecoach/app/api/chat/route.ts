@@ -19,12 +19,14 @@ export async function POST(req: NextRequest) {
     const {
       scenario,
       mode,
+      persona,
       resume,
       turns,
       round,
     }: {
       scenario: string;
       mode: string;
+      persona?: string;
       resume: string;
       turns: Turn[];
       round: number;
@@ -37,14 +39,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "no_key" }, { status: 503 });
     }
 
+    const p = (["warm", "pro", "tough", "curious"].includes(persona ?? "")
+      ? persona
+      : "pro") as "warm" | "pro" | "tough" | "curious";
+    const lastInterventions =
+      turns.length > 0 ? (turns[turns.length - 1].interventions ?? []) : [];
+
     const messages: { role: string; content: string }[] = [
-      { role: "system", content: buildSystemPrompt(scenario as any, mode as any, resume) },
+      {
+        role: "system",
+        content: buildSystemPrompt(scenario as any, mode as any, p, resume),
+      },
     ];
     for (const t of turns) {
       messages.push({ role: "user", content: t.answer });
       messages.push({ role: "assistant", content: t.question });
     }
-    messages.push({ role: "user", content: buildInterviewerRequest(round, TOTAL_ROUNDS) });
+    messages.push({
+      role: "user",
+      content: buildInterviewerRequest(round, TOTAL_ROUNDS, lastInterventions),
+    });
 
     let res = await fetch(`${base}/chat/completions`, {
       method: "POST",

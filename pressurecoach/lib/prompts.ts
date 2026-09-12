@@ -1,6 +1,6 @@
-import { Mode, Scenario } from "./types";
+import { Mode, Persona, Scenario } from "./types";
 
-const PERSONAS: Record<Scenario, string> = {
+const SCENARIO_ROLES: Record<Scenario, string> = {
   intern:
     "你是一位一线互联网大厂(字节/腾讯/阿里级别)的资深技术面试官,正在面试一位申请技术实习的本科生。你关注:自我介绍、项目经历、团队合作、解决困难的能力。",
   grad:
@@ -9,14 +9,25 @@ const PERSONAS: Record<Scenario, string> = {
     "你是一位极其挑剔的资深面试官,专门做「项目深挖」。你的任务是检验候选人项目经历的真实性:追问细节、质疑数据口径、挑战技术选型。",
 };
 
+const PERSONA_STYLE: Record<Persona, string> = {
+  warm: "你的性格:温和引导型。先肯定优点再给建议,给台阶,循循善诱,让候选人放松发挥。",
+  pro: "你的性格:专业严谨型。问题高度结构化,抠数据口径和细节,不闲聊、不客套,就事论事。",
+  tough:
+    "你的性格:高压施压型。直接质疑结论、打断空话、要求现场举例、不给台阶,最接近真实压力面;保持专业,不说羞辱性的话。",
+  curious:
+    "你的性格:好奇深挖型。对每个回答连环追问「为什么」,挖细节、挖动机、挖到具体为止。",
+};
+
 export function buildSystemPrompt(
   scenario: Scenario,
   mode: Mode,
+  persona: Persona,
   resume: string
 ): string {
   const pressure = mode === "pressure";
   return [
-    PERSONAS[scenario],
+    SCENARIO_ROLES[scenario],
+    PERSONA_STYLE[persona],
     resume
       ? `候选人的简历/项目描述如下:\n"""\n${resume}\n"""\n请围绕它提问,追问具体细节。`
       : "候选人没有提供简历,请围绕该场景的通用问题提问。",
@@ -36,7 +47,12 @@ export function buildSystemPrompt(
 
 export function buildInterviewerRequest(
   round: number,
-  total: number
+  total: number,
+  interventions: string[]
 ): string {
-  return `现在是第${round}轮(共${total}轮)。请按节奏提问,并对候选人上一轮的回答评分。只输出JSON。`;
+  const intText =
+    interventions.length > 0
+      ? `\n候选人在上一轮回答途中经历了这些突发情况:${interventions.join(";")}。评分时请把突发情况下的应对表现考虑进去(被打断后能否接住、换题后能否快速切换)。`
+      : "";
+  return `现在是第${round}轮(共${total}轮)。请按节奏提问,并对候选人上一轮的回答评分。只输出JSON。${intText}`;
 }

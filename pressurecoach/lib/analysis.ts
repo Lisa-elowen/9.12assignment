@@ -237,6 +237,20 @@ export function computeReport(turns: Turn[]): Report {
   // 高频语气词明细(带替换建议)
   const fillerBreakdown = topFillersBreakdown(turns);
 
+  // 突发干预统计 + 恢复时间(被打断/被质疑后的下一轮,多久才开口)
+  const interruptionCount = turns.reduce(
+    (s, t) => s + (t.interventions?.length ?? 0),
+    0
+  );
+  const recoveryLats = turns
+    .map((t, i) => ({ t, prev: turns[i - 1] }))
+    .filter(
+      ({ prev }) =>
+        prev && (prev.isChallenge || (prev.interventions?.length ?? 0) > 0)
+    )
+    .map(({ t }) => t.responseLatencySec ?? 0);
+  const recoverySec = recoveryLats.length ? Math.round(avg(recoveryLats) * 10) / 10 : null;
+
   // 4) 逐轮压力指数 → 压力曲线 + 触发点
   const medWords = median(turns.map((t) => t.wordCount));
   const pressure = turns.map((t, i) =>
@@ -330,6 +344,11 @@ export function computeReport(turns: Turn[]): Report {
     const top = fillerBreakdown[0];
     suggestions.push(`高频语气词「${top.word}」共 ${top.count} 次:${top.advice}`);
   }
+  if (interruptionCount > 0 && avgLatency > 4) {
+    suggestions.push(
+      `遭遇 ${interruptionCount} 次突发干预且恢复偏慢:专项练「打断接龙」——每说 10 秒就被打断一次,3 秒内回到主线`
+    );
+  }
   if (suggestions.length === 0) {
     suggestions.push("基础扎实:下一阶段挑战更高压的连续质疑训练,把稳定输出变成肌肉记忆");
   }
@@ -347,6 +366,7 @@ export function computeReport(turns: Turn[]): Report {
     curve,
     hexagon,
     fillerBreakdown,
+    recoverySec,
     suggestions: suggestions.slice(0, 4),
   };
 }

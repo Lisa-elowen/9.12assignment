@@ -5,7 +5,7 @@ import { Home } from "@/components/Home";
 import { Setup } from "@/components/Setup";
 import { Interview } from "@/components/Interview";
 import { Report } from "@/components/Report";
-import { Mode, Scenario, Session, Turn } from "@/lib/types";
+import { Mode, Persona, Scenario, Session, Turn } from "@/lib/types";
 import { computeReport } from "@/lib/analysis";
 import { loadSessions, saveSession } from "@/lib/store";
 
@@ -15,6 +15,7 @@ export default function Page() {
   const [step, setStep] = useState<Step>("home");
   const [scenario, setScenario] = useState<Scenario>("intern");
   const [mode, setMode] = useState<Mode>("pressure");
+  const [persona, setPersona] = useState<Persona>("pro");
   const [resume, setResume] = useState("");
   const [session, setSession] = useState<Session | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -25,9 +26,10 @@ export default function Page() {
 
   const refreshSessions = () => setSessions(loadSessions());
 
-  const start = (s: Scenario, m: Mode, r: string) => {
+  const start = (s: Scenario, m: Mode, p: Persona, r: string) => {
     setScenario(s);
     setMode(m);
+    setPersona(p);
     setResume(r);
     setSession(null);
     setStep("interview");
@@ -40,6 +42,7 @@ export default function Page() {
       at: Date.now(),
       scenario,
       mode,
+      persona,
       resume,
       turns,
       report,
@@ -77,6 +80,7 @@ export default function Page() {
       <Interview
         scenario={scenario}
         mode={mode}
+        persona={persona}
         resume={resume}
         onFinish={finish}
         onQuit={() => setStep("home")}
