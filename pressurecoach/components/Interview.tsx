@@ -63,6 +63,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const [hesitation, setHesitation] = useState(0);
   const [intervention, setIntervention] = useState<Intervention | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
+  const [voiceName, setVoiceName] = useState("");
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const qStartRef = useRef<number>(Date.now());
   const responseStartedRef = useRef(false);
@@ -204,6 +205,15 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   useEffect(() => {
     const load = () => {
       voiceRef.current = pickInterviewerVoice();
+      if (voiceRef.current) {
+        setVoiceName(
+          voiceRef.current.name
+            .replace(/^Microsoft /i, "")
+            .replace(/\(Natural\)/i, "")
+            .replace(/\s*-\s*Chinese.*$/i, "")
+            .trim()
+        );
+      }
     };
     load();
     window.speechSynthesis?.addEventListener?.("voiceschanged", load);
@@ -408,6 +418,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
               title="面试官语音朗读开关"
             >
               朗读 {autoSpeak ? "开" : "关"}
+              {voiceName ? ` · ${voiceName}` : ""}
             </button>
           </div>
           <div className="mt-1.5 flex items-center gap-2">
