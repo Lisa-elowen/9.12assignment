@@ -65,6 +65,8 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [voiceName, setVoiceName] = useState("");
   const [speechError, setSpeechError] = useState("");
+  const [reading, setReading] = useState(false);
+  const speechSeqRef = useRef(0);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const qStartRef = useRef<number>(Date.now());
   const responseStartedRef = useRef(false);
@@ -101,10 +103,14 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     )
   );
 
-  // 首次输入(打字或语音)即记下犹豫时长,并按概率埋一个突发干预
+  // 首次输入(打字或语音)即记下犹豫时长,并按概率埋一个突发干预。
+  // 若面试官还在读题就被打断:停止朗读,计时从此刻开始(犹豫 = 0)。
   const markResponseStarted = useCallback(() => {
     if (!responseStartedRef.current) {
       responseStartedRef.current = true;
+      stopSpeaking();
+      setReading(false);
+      if (qStartRef.current === 0) qStartRef.current = Date.now();
       latencyRef.current = (Date.now() - qStartRef.current) / 1000;
       setHesitation(latencyRef.current);
       if (Math.random() < interventionChance(mode, persona)) {
@@ -172,7 +178,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
       if (!cancelled) {
         setQuestion(q);
         setThinking(false);
-        qStartRef.current = Date.now();
+        qStartRef.current = 0; // 读题结束后才计时(speakQuestion 里 beginTiming)
         responseStartedRef.current = false;
         setHesitation(0);
       }
@@ -264,17 +270,33 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
       stopSpeaking();
     };
   }, []);
-  const speakCurrent = useCallback(
-    (text: string) =>
-      speak(text, voiceRef.current, { pitch: 0.85, rate: 1.12 }), // 固定压力版语气
-    []
-  );
+  const beginTiming = useCallback(() => {
+    if (qStartRef.current === 0) {
+      qStartRef.current = Date.now();
+    }
+  }, []);
+
+  /** 朗读当前问题;朗读结束(或被打断/失败)后才开始计算思考时间 */
+  const speakQuestion = (text: string) => {
+    const seq = ++speechSeqRef.current;
+    if (!autoSpeak) {
+      setReading(false);
+      beginTiming();
+      return;
+    }
+    setReading(true);
+    speak(text, voiceRef.current, { pitch: 0.85, rate: 1.12 }).finally(() => {
+      if (seq !== speechSeqRef.current) return; // 已被更新的朗读取代
+      setReading(false);
+      if (!responseStartedRef.current) beginTiming();
+    });
+  };
   useEffect(() => {
-    if (question && !thinking && autoSpeak) {
-      speakCurrent(question.question);
+    if (question && !thinking) {
+      speakQuestion(question.question);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [question, thinking, autoSpeak, speakCurrent]);
+  }, [question, thinking]);
 
   // 自动滚动
   useEffect(() => {
@@ -306,6 +328,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     if (!text && !timedOut) return;
     submittingRef.current = true;
     stopSpeaking();
+    setReading(false);
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (recording) {
       speechRef.current?.stop();
@@ -313,15 +336,18 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
       setRecording(false);
     }
     const limit = timeLimitFor(mode, round);
-    const durationSec = timedOut
-      ? limit
-      : Math.max(1, (Date.now() - qStartRef.current) / 1000);
+    // 计时未开始(读题中即提交)时按 1 秒计
+    const elapsedSec = () =>
+      qStartRef.current === 0
+        ? 1
+        : Math.max(1, (Date.now() - qStartRef.current) / 1000);
+    const durationSec = timedOut ? limit : elapsedSec();
     // 犹豫时长:开口/落笔前的时间,超时按满时长计
     const latencySec = timedOut
       ? limit
       : responseStartedRef.current
       ? Math.max(0, latencyRef.current)
-      : Math.max(1, (Date.now() - qStartRef.current) / 1000);
+      : elapsedSec();
     const m = analyzeAnswer(text);
     const empty = !text;
     const baseScore = empty
@@ -382,7 +408,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     setQuestion(q);
     setThinking(false);
     submittingRef.current = false;
-    qStartRef.current = Date.now();
+    qStartRef.current = 0; // 下一题读完后才计时
     responseStartedRef.current = false;
     setHesitation(0);
   };
@@ -390,9 +416,9 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const submit = () => doSubmit(false);
   doSubmitRef.current = doSubmit;
 
-  // 倒计时:题目出现即开始,制造时间压力
+  // 倒计时:面试官读完题才开始,制造时间压力
   useEffect(() => {
-    if (!question || thinking) {
+    if (!question || thinking || reading) {
       setTimeLeft(null);
       return;
     }
@@ -401,7 +427,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
       setTimeLeft((t) => (t === null ? t : t - 1));
     }, 1000);
     return () => clearInterval(iv);
-  }, [question, thinking, turns.length, mode]);
+  }, [question, thinking, reading, turns.length, mode]);
 
   // 超时自动交卷——哪怕只写了半句,这就是压力
   useEffect(() => {
@@ -411,16 +437,23 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
-  // 犹豫计时:题目出现后未开口的时间,每 0.1s 刷新
+  // 犹豫计时:读完题后未开口的时间,每 0.1s 刷新
   useEffect(() => {
-    if (!question || thinking || answer.trim() || responseStartedRef.current) {
+    if (
+      !question ||
+      thinking ||
+      reading ||
+      answer.trim() ||
+      responseStartedRef.current ||
+      qStartRef.current === 0
+    ) {
       return;
     }
     const iv = setInterval(() => {
       setHesitation((Date.now() - qStartRef.current) / 1000);
     }, 100);
     return () => clearInterval(iv);
-  }, [question, thinking, answer]);
+  }, [question, thinking, reading, answer]);
 
   const earlyFinish = () => {
     if (turns.length >= 3) onFinish(turns, usedAI);
@@ -595,7 +628,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
                   <span className="chip border-[#d41111]/50 text-[#d41111]">追问施压</span>
                 )}
                 <button
-                  onClick={() => speakCurrent(question.question)}
+                  onClick={() => speakQuestion(question.question)}
                   className="text-xs text-[#d41111] underline-offset-2 transition-opacity hover:opacity-70"
                   title="重读问题"
                 >

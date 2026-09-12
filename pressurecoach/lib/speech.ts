@@ -123,13 +123,17 @@ export function shortVoiceName(v: SpeechSynthesisVoice): string {
 
 let audioEl: HTMLAudioElement | null = null;
 
-/** 浏览器语音合成(试音页与兜底共用) */
+let pendingFinish: (() => void) | null = null;
+
+/** 浏览器语音合成(试音页与兜底共用)。返回 Promise,朗读结束/失败/被停止时 resolve */
 export function speakBrowser(
   text: string,
   voice?: SpeechSynthesisVoice | null,
   opts?: { pitch?: number; rate?: number }
-) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
+): Promise<void> {
+  if (typeof window === "undefined" || !window.speechSynthesis) {
+    return Promise.resolve();
+  }
   const ss = window.speechSynthesis;
   ss.cancel();
   try {
@@ -137,25 +141,39 @@ export function speakBrowser(
   } catch {
     /* noop */
   }
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "zh-CN";
-  u.rate = opts?.rate ?? 1.02;
-  u.pitch = opts?.pitch ?? 1;
-  if (voice) u.voice = voice;
-  window.setTimeout(() => {
-    if (ss.paused) ss.resume();
-    ss.speak(u);
-  }, 60);
+  return new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (pendingFinish === finish) pendingFinish = null;
+      resolve();
+    };
+    pendingFinish = finish;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "zh-CN";
+    u.rate = opts?.rate ?? 1.02;
+    u.pitch = opts?.pitch ?? 1;
+    if (voice) u.voice = voice;
+    u.onend = finish;
+    u.onerror = finish;
+    window.setTimeout(() => {
+      if (ss.paused) ss.resume();
+      ss.speak(u);
+      // 保险:某些浏览器不触发 onend
+      window.setTimeout(finish, 30000);
+    }, 60);
+  });
 }
 
-/** 朗读面试官的问题。服务端 TTS(火山接入后启用)2.5s 内没响应就退回浏览器音色 */
+/** 朗读面试官的问题。服务端 TTS 2.5s 内没响应就退回浏览器音色;返回朗读结束的 Promise */
 export async function speak(
   text: string,
   voice?: SpeechSynthesisVoice | null,
   opts?: { pitch?: number; rate?: number }
-) {
+): Promise<void> {
   if (typeof window === "undefined") return;
-  // 1) 服务端 TTS:真男声,跨浏览器一致(当前微软端点不稳定,火山 Key 到位后切换)
+  // 1) 服务端 TTS(当前微软端点不稳定,火山 Key 到位后切换)
   try {
     const ctrl = new AbortController();
     const timer = window.setTimeout(() => ctrl.abort(), 2500);
@@ -173,17 +191,25 @@ export async function speak(
       }
       audioEl = new Audio(url);
       audioEl.playbackRate = opts?.rate ?? 1.02;
-      await audioEl.play().catch(() => {});
-      return;
+      return new Promise<void>((resolve) => {
+        const finish = () => {
+          if (pendingFinish === finish) pendingFinish = null;
+          resolve();
+        };
+        pendingFinish = finish;
+        audioEl!.onended = finish;
+        audioEl!.onerror = finish;
+        audioEl!.play().catch(finish);
+      });
     }
   } catch {
     /* fall through */
   }
   // 2) 浏览器语音合成
-  speakBrowser(text, voice, opts);
+  return speakBrowser(text, voice, opts);
 }
 
-/** 停止朗读(提交回答、开始录音、离开面试舱时调用) */
+/** 停止朗读(提交回答、开始录音、离开面试舱时调用);会 resolve 未完成的朗读 Promise */
 export function stopSpeaking() {
   if (audioEl) {
     audioEl.pause();
@@ -193,4 +219,5 @@ export function stopSpeaking() {
   if (typeof window !== "undefined" && window.speechSynthesis) {
     window.speechSynthesis.cancel();
   }
+  pendingFinish?.();
 }
