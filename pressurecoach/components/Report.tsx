@@ -18,11 +18,11 @@ interface Props {
 function ScoreRing({ score }: { score: number }) {
   const r = 52;
   const c = 2 * Math.PI * r;
-  const color = score >= 70 ? "#34d399" : score >= 55 ? "#fbbf24" : "#f43f5e";
+  const color = score >= 70 ? "#575e4e" : score >= 55 ? "#a16207" : "#d41111";
   return (
     <div className="relative h-36 w-36">
       <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="#262d3f" strokeWidth="10" />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#e7e5e4" strokeWidth="10" />
         <circle
           cx="60"
           cy="60"
@@ -39,7 +39,7 @@ function ScoreRing({ score }: { score: number }) {
         <span className="text-4xl font-extrabold" style={{ color }}>
           {score}
         </span>
-        <span className="text-xs text-[#8b93a7]">综合表现</span>
+        <span className="text-xs text-[#78716c]">综合表现</span>
       </div>
     </div>
   );
@@ -62,22 +62,22 @@ function HexagonChart({ data }: { data: { label: string; value: number }[] }) {
   return (
     <svg viewBox="0 0 260 215" className="mx-auto w-full max-w-sm">
       {[1 / 3, 2 / 3, 1].map((f) => (
-        <polygon key={f} points={poly(R * f)} fill="none" stroke="#262d3f" strokeWidth="1" />
+        <polygon key={f} points={poly(R * f)} fill="none" stroke="#e7e5e4" strokeWidth="1" />
       ))}
       {data.map((_, i) => {
         const [x, y] = pt(i, R);
-        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#262d3f" strokeWidth="1" />;
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e7e5e4" strokeWidth="1" />;
       })}
       <polygon
         points={valuePts}
         fill="rgba(244,63,94,0.18)"
-        stroke="#f43f5e"
+        stroke="#d41111"
         strokeWidth="2"
         strokeLinejoin="round"
       />
       {data.map((d, i) => {
         const [x, y] = pt(i, (R * Math.max(0, Math.min(100, d.value))) / 100);
-        return <circle key={i} cx={x} cy={y} r="3" fill="#f43f5e" />;
+        return <circle key={i} cx={x} cy={y} r="3" fill="#d41111" />;
       })}
       {data.map((d, i) => {
         const [x, y] = pt(i, labelR);
@@ -88,7 +88,7 @@ function HexagonChart({ data }: { data: { label: string; value: number }[] }) {
             x={x}
             y={y + 4}
             textAnchor={anchor}
-            className="fill-[#8b93a7] text-[11px] font-medium"
+            className="fill-[#78716c] text-[11px] font-medium"
           >
             {d.label} {d.value}
           </text>
@@ -152,11 +152,11 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
         <button onClick={onHome} className="btn-ghost px-3 py-1.5 text-sm">
           ← 首页
         </button>
-        <span className="text-sm text-[#5b6275]">面试体检报告</span>
+        <span className="text-sm text-[#78716c]">面试体检报告</span>
       </header>
 
       {!usedAI && (
-        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-400">
+        <div className="mb-4 rounded-lg border border-[#a16207]/40 bg-[#a16207]/10 px-3 py-1.5 text-xs text-[#a16207]">
           演示模式(未接入 AI):题目来自内置脚本,评分来自语言分析引擎。
         </div>
       )}
@@ -168,12 +168,12 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
           <div>
             <div className="text-lg font-bold">
               {sc.icon} {sc.name}
-              <span className="ml-2 text-sm font-normal text-[#8b93a7]">{md.name}</span>
+              <span className="ml-2 text-sm font-normal text-[#78716c]">{md.name}</span>
             </div>
-            <div className="mt-1 text-sm text-[#8b93a7]">
-              等级:<span className="font-semibold text-[#e6e8ee]">{level}</span>
+            <div className="mt-1 text-sm text-[#78716c]">
+              等级:<span className="font-semibold text-[#1c1917]">{level}</span>
             </div>
-            <div className="mt-1 text-sm text-[#8b93a7]">
+            <div className="mt-1 text-sm text-[#78716c]">
               {turns.length} 轮问答 ·{" "}
               {turns.reduce((s, t) => s + t.durationSec, 0).toFixed(0)} 秒 · 平均开口犹豫{" "}
               {avgLatency.toFixed(1)}s
@@ -182,7 +182,7 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
               )}
               <span> · 峰值心率估算 {peakHR}bpm</span>
               {turns.some((t) => t.timedOut) && (
-                <span className="ml-1 text-rose-400">
+                <span className="ml-1 text-[#d41111]">
                   · {turns.filter((t) => t.timedOut).length} 轮超时
                 </span>
               )}
@@ -190,8 +190,8 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
           </div>
         </div>
         <div className="w-full text-center md:w-56 md:text-left">
-          <div className="text-xs text-[#5b6275]">核心结论</div>
-          <div className="mt-1 text-sm leading-relaxed text-[#e6e8ee]">
+          <div className="text-xs text-[#78716c]">核心结论</div>
+          <div className="mt-1 text-sm leading-relaxed text-[#1c1917]">
             {report.trigger
               ? `你的问题不是不会,而是「${report.trigger.label}」时在持续压力下无法保持输出。`
               : "整体表现稳定,可以挑战更高压的训练模式。"}
@@ -201,8 +201,8 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
 
       {/* 六维能力图(健身 App 式雷达) */}
       <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.1s" }}>
-        <h3 className="text-sm font-bold">🧭 六维能力图</h3>
-        <p className="mt-1 text-xs text-[#8b93a7]">
+        <h3 className="text-sm font-bold">六维能力图</h3>
+        <p className="mt-1 text-xs text-[#78716c]">
           仿健身 App 能力雷达:长板短板一眼看清。综合分 = 六维加权,而非只看面积。
         </p>
         <div className="mt-2">
@@ -210,17 +210,17 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {hex.map((d, i) => (
-            <div key={d.label} className="rounded-lg bg-[#0e1119] p-2.5">
+            <div key={d.label} className="rounded-lg bg-[#f4f1ee] p-2.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-[#8b93a7]">
+                <span className="text-[#78716c]">
                   {["①", "②", "③", "④", "⑤", "⑥"][i]} {d.label}
                 </span>
                 <span className="font-bold tabular-nums">{d.value}</span>
               </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[#262d3f]">
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[#e7e5e4]">
                 <div
                   className={`h-full rounded-full ${
-                    d.value >= 75 ? "bg-emerald-400" : d.value >= 60 ? "bg-amber-400" : "bg-rose-500"
+                    d.value >= 75 ? "bg-[#575e4e]" : d.value >= 60 ? "bg-[#a16207]" : "bg-[#d41111]"
                   }`}
                   style={{ width: `${d.value}%` }}
                 />
@@ -229,12 +229,12 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
           ))}
         </div>
         {weakest && strongest && (
-          <div className="mt-3 rounded-lg border border-[#262d3f] bg-[#0e1119] p-3 text-xs leading-relaxed">
-            <span className="text-[#8b93a7]">🎯 优先补短板:</span>
-            <span className="ml-1 font-semibold text-rose-400">
+          <div className="mt-3 rounded-lg border border-[#e7e5e4] bg-[#f4f1ee] p-3 text-xs leading-relaxed">
+            <span className="text-[#78716c]">优先补短板:</span>
+            <span className="ml-1 font-semibold text-[#d41111]">
               {weakest.label}({weakest.value} 分)
             </span>
-            <span className="ml-1 text-[#8b93a7]">
+            <span className="ml-1 text-[#78716c]">
               · 长板是{strongest.label}({strongest.value} 分),面试中把它作为安全区,先稳住再发挥
             </span>
           </div>
@@ -243,24 +243,24 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
 
       {/* 压力曲线 */}
       <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.4s" }}>
-        <h3 className="text-sm font-bold">📈 压力曲线</h3>
-        <p className="mt-1 text-xs text-[#8b93a7]">
+        <h3 className="text-sm font-bold">压力曲线</h3>
+        <p className="mt-1 text-xs text-[#78716c]">
           基于模糊词密度、回答长度变化与追问强度计算,峰值即你的压力触发点。
         </p>
         <div className="mt-3">
           <PressureChart data={report.curve} />
         </div>
         {breaks.length > 0 && (
-          <p className="mt-2 text-xs leading-relaxed text-[#8b93a7]">
-            ⚡ 逻辑断裂点:{breaks.join(" · ")}
+          <p className="mt-2 text-xs leading-relaxed text-[#78716c]">
+            逻辑断裂点:{breaks.join(" · ")}
           </p>
         )}
       </section>
 
       {/* 触发点 */}
       {report.trigger && (
-        <section className="card fade-up mt-4 border-rose-500/30 p-5" style={{ animationDelay: "0.5s" }}>
-          <h3 className="text-sm font-bold text-rose-400">⚠️ 压力触发点</h3>
+        <section className="card fade-up mt-4 border-[#d41111]/30 p-5" style={{ animationDelay: "0.5s" }}>
+          <h3 className="text-sm font-bold text-[#d41111]">压力触发点</h3>
           <p className="mt-2 text-sm leading-relaxed">
             {report.trigger.detail}
           </p>
@@ -270,15 +270,15 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
       {/* 崩溃点 */}
       {report.crashQuote && (
         <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.6s" }}>
-          <h3 className="text-sm font-bold">💥 崩溃点回放</h3>
-          <p className="mt-1 text-xs text-[#5b6275]">
+          <h3 className="text-sm font-bold">崩溃点回放</h3>
+          <p className="mt-1 text-xs text-[#78716c]">
             第 {report.crashQuote.round} 轮 · 「{turns[report.crashQuote.round - 1]?.tag}」· 模糊词高亮
           </p>
-          <blockquote className="mt-3 rounded-xl border border-[#262d3f] bg-[#0e1119] p-4 text-sm leading-relaxed text-[#c9cedd]">
+          <blockquote className="mt-3 rounded-xl border border-[#e7e5e4] bg-[#f4f1ee] p-4 text-sm leading-relaxed text-[#44403c]">
             “{highlightFillers(report.crashQuote.text, report.crashQuote.fillers)}”
           </blockquote>
-          <p className="mt-2 text-xs text-[#8b93a7]">
-            👁 面试官观察:{turns[report.crashQuote.round - 1]?.note}
+          <p className="mt-2 text-xs text-[#78716c]">
+            面试官观察:{turns[report.crashQuote.round - 1]?.note}
           </p>
         </section>
       )}
@@ -286,20 +286,20 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
       {/* 高频语气词改造 */}
       {fillerBreakdown.length > 0 && (
         <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.65s" }}>
-          <h3 className="text-sm font-bold">🗣 高频语气词改造</h3>
-          <p className="mt-1 text-xs text-[#8b93a7]">
+          <h3 className="text-sm font-bold">高频语气词改造</h3>
+          <p className="mt-1 text-xs text-[#78716c]">
             这些词在压力下最先暴露。逐个替换,表达立即变稳。
           </p>
           <div className="mt-3 space-y-2">
             {fillerBreakdown.map((f) => (
-              <div key={f.word} className="rounded-xl border border-[#262d3f] bg-[#0e1119] p-3">
+              <div key={f.word} className="rounded-xl border border-[#e7e5e4] bg-[#f4f1ee] p-3">
                 <div className="flex items-center gap-2">
                   <span className="filler-hl rounded px-1.5 py-0.5 text-xs font-bold">
                     「{f.word}」
                   </span>
-                  <span className="text-xs text-[#5b6275]">出现 {f.count} 次</span>
+                  <span className="text-xs text-[#78716c]">出现 {f.count} 次</span>
                 </div>
-                <div className="mt-1.5 text-xs leading-relaxed text-[#c9cedd]">
+                <div className="mt-1.5 text-xs leading-relaxed text-[#44403c]">
                   → {f.advice}
                 </div>
               </div>
@@ -310,11 +310,11 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
 
       {/* 训练建议 */}
       <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.7s" }}>
-        <h3 className="text-sm font-bold">🏋️ 针对性训练任务</h3>
+        <h3 className="text-sm font-bold">针对性训练任务</h3>
         <ol className="mt-3 space-y-2.5">
           {report.suggestions.map((s, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm leading-relaxed">
-              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-500/15 text-xs font-bold text-rose-400">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d41111]/15 text-xs font-bold text-[#d41111]">
                 {i + 1}
               </span>
               <span>{s}</span>
@@ -332,7 +332,7 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
           返回首页
         </button>
       </div>
-      <p className="mt-4 text-center text-xs text-[#5b6275]">
+      <p className="mt-4 text-center text-xs text-[#78716c]">
         数据仅保存在你的浏览器本地,不会上传。
       </p>
     </div>

@@ -42,8 +42,8 @@ export function PressureChart({ data }: { data: Point[] }) {
     >
       <defs>
         <linearGradient id="pcGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="#d41111" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#d41111" stopOpacity="0.02" />
         </linearGradient>
       </defs>
 
@@ -55,11 +55,11 @@ export function PressureChart({ data }: { data: Point[] }) {
             x2={W - PAD_X}
             y1={y(v)}
             y2={y(v)}
-            stroke="#262d3f"
+            stroke="#e7e5e4"
             strokeDasharray="3 4"
             strokeWidth="1"
           />
-          <text x={PAD_X - 6} y={y(v) + 3} fontSize="8" fill="#5b6275" textAnchor="end">
+          <text x={PAD_X - 6} y={y(v) + 3} fontSize="8" fill="#78716c" textAnchor="end">
             {v}
           </text>
         </g>
@@ -70,7 +70,7 @@ export function PressureChart({ data }: { data: Point[] }) {
       <polyline
         points={pts}
         fill="none"
-        stroke="#f43f5e"
+        stroke="#d41111"
         strokeWidth="2.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -83,8 +83,8 @@ export function PressureChart({ data }: { data: Point[] }) {
             cx={x(i)}
             cy={y(d.value)}
             r={i === peakIdx ? 5.5 : 3.5}
-            fill={i === peakIdx ? "#f43f5e" : "#12151f"}
-            stroke="#f43f5e"
+            fill={i === peakIdx ? "#d41111" : "#ffffff"}
+            stroke="#d41111"
             strokeWidth="2"
           />
           {i === peakIdx && (
@@ -92,7 +92,7 @@ export function PressureChart({ data }: { data: Point[] }) {
               x={x(i)}
               y={y(d.value) - 12}
               fontSize="9"
-              fill="#fb7185"
+              fill="#d41111"
               textAnchor="middle"
               fontWeight="700"
             >
@@ -109,7 +109,7 @@ export function PressureChart({ data }: { data: Point[] }) {
             x={x(i)}
             y={PAD_TOP + innerH + 16}
             fontSize="9"
-            fill="#8b93a7"
+            fill="#78716c"
             textAnchor="middle"
           >
             {d.label}
@@ -118,7 +118,7 @@ export function PressureChart({ data }: { data: Point[] }) {
             x={x(i)}
             y={PAD_TOP + innerH + 30}
             fontSize="8"
-            fill="#5b6275"
+            fill="#78716c"
             textAnchor="middle"
           >
             第{d.round}轮

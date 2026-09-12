@@ -1,95 +1,238 @@
 @import "tailwindcss";
 
-/* ── ClawsGO 风设计系统 ─────────────────────────────── */
+/* ── 金缮 · 侘寂风设计系统 ───────────────────────────── */
+/* 浅色纸感 · 朱红 · 衬线 · 克制 · 一切可触 */
 :root {
-  --bg: #0a0a0a;
-  --panel: #141414;
-  --panel2: #171717;
-  --line: #262626;
-  --line2: #3a3a3a;
-  --txt: #f5f5f5;
-  --sub: #9aa0a6;
-  --dim: #5f6368;
-  --accent: #00bb7f; /* 主强调:绿(成功/进度) */
-  --accent-dim: #00bb7f1a;
-  --danger: #ff5f57; /* 压力/危险 */
-  --warn: #febc2e;   /* 犹豫/警告 */
-  --violet: #a685ff; /* 点缀紫 */
-  --mono: ui-monospace, "Geist Mono Variable", SFMono-Regular, Menlo, Consolas, monospace;
+  --paper: #f8f6f6;
+  --surface: #ffffff;
+  --surface2: #f4f1ee;
+  --ink: #1c1917;
+  --ink-soft: #44403c;
+  --ink-dim: #78716c;
+  --line: #d6d3d1;
+  --line-soft: #e7e5e4;
+  --accent: #d41111;   /* 漆器朱红 */
+  --accent-deep: #b91010;
+  --accent-soft: rgba(212, 17, 17, 0.08);
+  --good: #575e4e;     /* 苔绿(状态) */
+  --warn: #a16207;     /* 琥珀(警告) */
+  --font-display: "Songti SC", "STSong", "Noto Serif CJK SC", "SimSun", "Georgia", serif;
+  --font-sans: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background: var(--bg);
-  color: var(--txt);
-  font-family: "Inter Variable", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-/* 通用组件类 */
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-dim); }
+
+/* ── 通用组件 ── */
 .card {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 2px;
 }
 
 .card-hover:hover {
-  border-color: var(--line2);
-  background: var(--panel2);
-  transition: all 0.15s ease;
+  border-color: var(--line);
+  transition: all 0.3s ease;
 }
 
 .btn-primary {
   background: var(--accent);
-  color: #04130c;
-  border-radius: 10px;
-  font-weight: 600;
-  padding: 0.7rem 1.4rem;
-  transition: all 0.15s ease;
+  color: #fff;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 2rem;
+  font-size: 0.875rem;
+  transition: background 0.3s ease, transform 0.3s ease;
 }
-.btn-primary:hover { background: #00d18c; }
+.btn-primary:hover { background: var(--accent-deep); transform: translateY(-1px); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btn-ghost {
   border: 1px solid var(--line);
-  color: var(--txt);
-  border-radius: 10px;
+  color: var(--ink);
+  border-radius: 2px;
   font-weight: 500;
   padding: 0.7rem 1.4rem;
-  transition: all 0.15s ease;
+  font-size: 0.875rem;
+  transition: border-color 0.3s ease, background 0.3s ease;
 }
-.btn-ghost:hover { border-color: var(--line2); background: var(--panel2); }
+.btn-ghost:hover { border-color: var(--accent); background: var(--accent-soft); }
 
-/* 等宽 chip(clawsgo 的 host/模型/文件 标签风格) */
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   font-size: 0.7rem;
-  font-family: var(--mono);
-  padding: 0.14rem 0.55rem;
+  letter-spacing: 0.08em;
+  padding: 0.14rem 0.6rem;
   border-radius: 999px;
   border: 1px solid var(--line);
-  color: var(--sub);
-  background: var(--panel2);
+  color: var(--ink-soft);
+  background: var(--surface);
 }
 
 .input {
   width: 100%;
-  background: var(--panel2);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 0.75rem 1rem;
-  color: var(--txt);
+  color: var(--ink);
   outline: none;
   resize: none;
 }
-.input:focus { border-color: #404040; }
+.input:focus { border-color: var(--accent); }
 
-/* 打字动画 */
+/* ── 纸纹噪点(全局,混合正片叠底) ── */
+.texture-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E");
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ── 禅圆开场(Enso preloader) ── */
+@keyframes fade-out {
+  0% { opacity: 1; visibility: visible; }
+  75% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #fcfaf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-out 2.4s forwards ease-in-out;
+  pointer-events: none;
+}
+@keyframes draw-enso {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+.enso-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-enso 2s ease-out forwards;
+}
+
+/* ── 竖排文字 ── */
+.writing-vertical {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+}
+
+/* ── 手工感不规则裁剪 ── */
+.clip-rough-1 { clip-path: polygon(2% 0%, 98% 1%, 100% 98%, 0% 100%); }
+.clip-rough-2 { clip-path: polygon(0% 2%, 99% 0%, 97% 97%, 1% 100%); }
+.clip-rough-3 { clip-path: polygon(2% 1%, 95% 2%, 98% 99%, 0% 96%); }
+
+/* ── 滚动显隐(淡入上浮) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── 印章 ── */
+.stamp {
+  border: 1px solid rgba(212, 17, 17, 0.35);
+  padding: 0.4rem;
+  display: inline-block;
+  border-radius: 2px;
+  background: var(--surface);
+}
+.stamp-inner {
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.6rem 0.4rem;
+  border-radius: 2px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  border: 1px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+}
+
+/* ── 竖排导航(桌面侧栏) ── */
+.nav-item {
+  position: relative;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+.nav-item:hover { color: var(--accent); }
+.nav-indicator {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: var(--accent);
+  margin-right: 0.5rem;
+  transition: height 0.3s ease;
+}
+.nav-item:hover .nav-indicator { height: 1rem; }
+
+/* ── 画廊卡片(hover 揭幕) ── */
+.gallery-card {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gallery-card:hover { transform: translateY(-4px); }
+.item-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 1.5rem;
+  background: linear-gradient(to top, rgba(28, 25, 23, 0.85), transparent);
+  transform: translateY(100%);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gallery-card:hover .item-overlay { transform: translateY(0); }
+
+/* ── 打字动画 ── */
 @keyframes blink {
   0%, 80%, 100% { opacity: 0.25; }
   40% { opacity: 1; }
@@ -98,29 +241,16 @@ body {
 .typing-dot:nth-child(2) { animation-delay: 0.2s; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
-/* 录音脉冲 */
+/* ── 录音脉冲 ── */
 @keyframes pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(0, 187, 127, 0.5); }
-  100% { box-shadow: 0 0 0 12px rgba(0, 187, 127, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(212, 17, 17, 0.4); }
+  100% { box-shadow: 0 0 0 12px rgba(212, 17, 17, 0); }
 }
 .recording { animation: pulse-ring 1.1s infinite; }
 
-/* 报告数字滚动入场 */
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fade-up { animation: fade-up 0.4s ease both; }
-
-.filler-hl {
-  color: var(--danger);
-  font-weight: 600;
-  border-bottom: 1px dashed var(--danger);
-}
-
-/* ClawsGO 风:hero 逐字入场 */
+/* ── 逐字入场 ── */
 @keyframes char-in {
-  from { opacity: 0; transform: translateY(16px); filter: blur(6px); }
+  from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
   to { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 .char-in {
@@ -128,10 +258,10 @@ body {
   animation: char-in 0.5s ease both;
 }
 
-/* 轮次步骤时间线 */
+/* ── 轮次步骤时间线 ── */
 .step-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
   flex-shrink: 0;
 }
@@ -141,72 +271,121 @@ body {
   background: var(--line);
 }
 
-/* 回答耗时 meta chip(等宽) */
+/* ── 回答耗时 meta ── */
 .meta-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   font-size: 0.68rem;
-  font-family: var(--mono);
+  letter-spacing: 0.04em;
   padding: 0.1rem 0.5rem;
-  border-radius: 6px;
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  color: var(--sub);
+  border-radius: 2px;
+  background: var(--surface2);
+  border: 1px solid var(--line-soft);
+  color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
-/* 文件产出 chip(clawsgo 的 file chip:文件名 + 计数徽标) */
+/* ── 文件产出 chip ── */
 .file-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--mono);
   font-size: 0.72rem;
   padding: 0.25rem 0.5rem 0.25rem 0.65rem;
-  border-radius: 8px;
+  border-radius: 2px;
   border: 1px solid var(--line);
-  background: var(--panel2);
-  color: var(--txt);
+  background: var(--surface);
+  color: var(--ink);
 }
 .file-chip .badge {
   font-size: 0.62rem;
   color: var(--accent);
-  background: var(--accent-dim);
+  background: var(--accent-soft);
   border-radius: 999px;
   padding: 0.05rem 0.4rem;
 }
 
-/* 步骤日志行(clawsgo 的 step log:缩进 + 等宽 + 时长) */
+/* ── 步骤日志 ── */
 .step-log {
-  font-family: var(--mono);
   font-size: 0.78rem;
-  line-height: 1.9;
-  color: var(--sub);
+  line-height: 2;
+  color: var(--ink-soft);
+  letter-spacing: 0.03em;
 }
 .step-log .t {
-  color: var(--dim);
+  color: var(--ink-dim);
   float: right;
 }
 
-/* 终端面板 */
+/* ── 终端面板 ── */
 .terminal {
-  font-family: var(--mono);
   font-size: 0.75rem;
-  line-height: 1.75;
-  background: #0d0d0d;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.9rem 1rem;
-  color: #c9c9c9;
+  line-height: 1.85;
+  background: #221010;
+  border: 1px solid #221010;
+  border-radius: 2px;
+  padding: 1rem 1.2rem;
+  color: #e7e5e4;
 }
-.terminal .prompt { color: var(--accent); }
-.terminal .dim { color: var(--dim); }
+.terminal .prompt { color: #ff8f8f; }
+.terminal .dim { color: #a8a29e; }
 
-/* 时间叙事标签 */
+/* ── 时间叙事标签 ── */
 .time-tag {
-  font-family: var(--mono);
   font-size: 0.68rem;
-  color: var(--dim);
-  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  letter-spacing: 0.12em;
 }
+
+/* ── 锦囊(可展开) ── */
+.tip-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+  opacity: 0;
+}
+.tip-open .tip-panel {
+  max-height: 300px;
+  opacity: 1;
+}
+.tip-open .tip-caret {
+  transform: rotate(45deg);
+}
+.tip-caret {
+  transition: transform 0.4s ease;
+  font-size: 1rem;
+  color: var(--accent);
+}
+
+/* ── 报告数字入场 ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.5s ease both; }
+
+.filler-hl {
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom: 1px dashed var(--accent);
+}
+
+/* ── 滚动指示 ── */
+@keyframes bounce-down {
+  0%, 100% { transform: translate(-50%, -25%); }
+  50% { transform: translate(-50%, 0); }
+}
+.scroll-indicator {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.45;
+  animation: bounce-down 2s infinite;
+}
+@media (min-width: 1024px) { .scroll-indicator { display: flex; } }

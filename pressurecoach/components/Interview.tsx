@@ -340,32 +340,32 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
             <span
               className={`chip ${
                 mode === "pressure"
-                  ? "border-rose-500/50 text-rose-400"
-                  : "border-sky-500/50 text-sky-400"
+                  ? "border-[#d41111]/50 text-[#d41111]"
+                  : "border-[#575e4e]/50 text-[#575e4e]"
               }`}
             >
               {md.icon} {md.name}
             </span>
-            <span className="chip border-[#262d3f] text-[#8b93a7]">
+            <span className="chip border-[#e7e5e4] text-[#78716c]">
               {ps.icon} {ps.name}
             </span>
             <span
               className={`chip shrink-0 tabular-nums ${
-                hr > 110 ? "animate-pulse border-rose-500/50 text-rose-400" : "border-[#262d3f] text-[#8b93a7]"
+                hr > 110 ? "animate-pulse border-[#d41111]/50 text-[#d41111]" : "border-[#e7e5e4] text-[#78716c]"
               }`}
               title="心率估算(基于犹豫时长与压力信号,真实手环接入后替换)"
             >
-              ❤️ {hr}
+              {hr}
             </span>
           </div>
           <div className="mt-1.5 flex items-center gap-2">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#262d3f]">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#e7e5e4]">
               <div
-                className="h-full rounded-full bg-rose-500 transition-all duration-500"
+                className="h-full rounded-full bg-[#d41111] transition-all duration-500"
                 style={{ width: `${(Math.min(round, TOTAL_ROUNDS) / TOTAL_ROUNDS) * 100}%` }}
               />
             </div>
-            <span className="shrink-0 text-xs text-[#5b6275]">
+            <span className="shrink-0 text-xs text-[#78716c]">
               第 {Math.min(round, TOTAL_ROUNDS)}/{TOTAL_ROUNDS} 轮
             </span>
           </div>
@@ -381,19 +381,19 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
                     <div
                       className={`step-dot ${
                         done
-                          ? "bg-emerald-400"
+                          ? "bg-[#575e4e]"
                           : current
-                          ? "animate-pulse bg-rose-500"
-                          : "bg-[#262d3f]"
+                          ? "animate-pulse bg-[#d41111]"
+                          : "bg-[#e7e5e4]"
                       }`}
                     />
                     <span
                       className={`text-[9px] leading-none ${
                         done
-                          ? "text-emerald-400"
+                          ? "text-[#575e4e]"
                           : current
-                          ? "font-semibold text-rose-400"
-                          : "text-[#5b6275]"
+                          ? "font-semibold text-[#d41111]"
+                          : "text-[#78716c]"
                       }`}
                     >
                       {inferTag(i + 1)}
@@ -407,7 +407,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
       </header>
 
       {offlineNotice && (
-        <div className="mb-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-400">
+        <div className="mb-2 rounded-lg border border-[#a16207]/40 bg-[#a16207]/10 px-3 py-1.5 text-xs text-[#a16207]">
           未配置 AI Key,当前为内置演示模式。配置后即可使用真实 AI 面试官。
         </div>
       )}
@@ -418,14 +418,14 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
           <div key={i} className="space-y-3">
             {/* 面试官 */}
             <div className="flex items-start gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#191e2c] text-base">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffffff] text-base">
                 {sc.icon}
               </div>
               <div className="max-w-[85%]">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#5b6275]">面试官</span>
+                  <span className="text-xs text-[#78716c]">面试官</span>
                   {t.isChallenge && (
-                    <span className="chip border-rose-500/50 text-rose-400">⚔️ 追问施压</span>
+                    <span className="chip border-[#d41111]/50 text-[#d41111]">追问施压</span>
                   )}
                 </div>
                 <div className="card mt-1 px-4 py-3 text-sm leading-relaxed">
@@ -436,32 +436,32 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
             {/* 候选人 */}
             <div className="flex items-start justify-end gap-2.5">
               <div className="max-w-[85%]">
-                <div className="text-right text-xs text-[#5b6275]">你</div>
-                <div className="mt-1 rounded-2xl rounded-tr-sm bg-rose-500/15 px-4 py-3 text-sm leading-relaxed">
+                <div className="text-right text-xs text-[#78716c]">你</div>
+                <div className="mt-1 rounded-2xl rounded-tr-sm bg-[#d41111]/15 px-4 py-3 text-sm leading-relaxed">
                   {t.answer}
                 </div>
                 {t.note && (
-                  <div className="mt-1 text-right text-xs italic text-[#5b6275]">
-                    👁 面试官观察:{t.note}
+                  <div className="mt-1 text-right text-xs italic text-[#78716c]">
+                    面试官观察:{t.note}
                   </div>
                 )}
                 {/* 回答耗时 meta(ClawsGO 风 step 计时) */}
                 <div className="mt-1 flex flex-wrap justify-end gap-1">
-                  <span className="meta-chip">⏱ 用时 {Math.round(t.durationSec)}s</span>
+                  <span className="meta-chip">用时 {Math.round(t.durationSec)}s</span>
                   {t.responseLatencySec != null && (
                     <span className="meta-chip">
                       犹豫 {t.responseLatencySec.toFixed(1)}s
                     </span>
                   )}
                   {(t.interventions?.length ?? 0) > 0 && (
-                    <span className="meta-chip !text-rose-400">
-                      ⚡ 突发 ×{t.interventions!.length}
+                    <span className="meta-chip !text-[#d41111]">
+                      突发 ×{t.interventions!.length}
                     </span>
                   )}
                 </div>
               </div>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-base">
-                🧑‍🎓
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#d41111]/15 text-base">
+                
               </div>
             </div>
           </div>
@@ -470,14 +470,14 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
         {/* 当前问题 */}
         {question && !thinking && (
           <div className="flex items-start gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#191e2c] text-base">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffffff] text-base">
               {sc.icon}
             </div>
             <div className="max-w-[85%]">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[#5b6275]">面试官</span>
+                <span className="text-xs text-[#78716c]">面试官</span>
                 {question.challenge && (
-                  <span className="chip border-rose-500/50 text-rose-400">⚔️ 追问施压</span>
+                  <span className="chip border-[#d41111]/50 text-[#d41111]">追问施压</span>
                 )}
               </div>
               <div className="card mt-1 px-4 py-3 text-sm leading-relaxed">
@@ -489,32 +489,32 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
 
         {thinking && (
           <div className="flex items-start gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#191e2c] text-base">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#ffffff] text-base">
               {sc.icon}
             </div>
             <div className="card flex items-center gap-1.5 px-4 py-3">
-              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#8b93a7]" />
-              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#8b93a7]" />
-              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#8b93a7]" />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#78716c]" />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#78716c]" />
+              <span className="typing-dot h-1.5 w-1.5 rounded-full bg-[#78716c]" />
             </div>
           </div>
         )}
       </div>
 
       {/* 输入区 */}
-      <div className="border-t border-[#262d3f] py-4">
+      <div className="border-t border-[#e7e5e4] py-4">
         {/* 倒计时压力条 */}
         {timeLeft !== null && question && !thinking && (
           <div className="mb-2 flex items-center gap-2">
             <span className="text-sm">⏱</span>
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#262d3f]">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#e7e5e4]">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${
                   timeLeft <= 10
-                    ? "bg-rose-500"
+                    ? "bg-[#d41111]"
                     : timeLeft <= 30
-                    ? "bg-amber-400"
-                    : "bg-sky-400"
+                    ? "bg-[#a16207]"
+                    : "bg-[#575e4e]"
                 }`}
                 style={{
                   width: `${(timeLeft / timeLimitFor(mode, round)) * 100}%`,
@@ -524,10 +524,10 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
             <span
               className={`shrink-0 text-sm font-bold tabular-nums ${
                 timeLeft <= 10
-                  ? "animate-pulse text-rose-400"
+                  ? "animate-pulse text-[#d41111]"
                   : timeLeft <= 30
-                  ? "text-amber-400"
-                  : "text-[#8b93a7]"
+                  ? "text-[#a16207]"
+                  : "text-[#78716c]"
               }`}
             >
               {Math.floor(timeLeft / 60)}:
@@ -537,14 +537,14 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
           </div>
         )}
         {mode === "pressure" && timeLeft !== null && timeLeft <= 30 && timeLeft > 0 && (
-          <div className="mb-1.5 text-center text-xs font-medium text-rose-400">
-            ⏳ 时间不等人——先给结论,细节后补
+          <div className="mb-1.5 text-center text-xs font-medium text-[#d41111]">
+            时间不等人——先给结论,细节后补
           </div>
         )}
         {/* 突发干预:面试中的不可预测因素 */}
         {intervention && (
-          <div className="mb-2 animate-pulse rounded-lg border border-rose-500/50 bg-rose-500/10 px-3 py-2 text-sm leading-relaxed text-rose-300">
-            ⚡ 突发情况:{intervention.text}
+          <div className="mb-2 animate-pulse rounded-lg border border-[#d41111]/50 bg-[#d41111]/10 px-3 py-2 text-sm leading-relaxed text-[#d41111]">
+            突发情况:{intervention.text}
           </div>
         )}
         {/* 犹豫计时:开口前的沉默会被记录并扣分 */}
@@ -552,18 +552,18 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
           <div
             className={`mb-1.5 flex items-center justify-center gap-1.5 text-xs font-medium ${
               hesitation > latencyThreshold
-                ? "animate-pulse text-rose-400"
-                : "text-amber-400"
+                ? "animate-pulse text-[#d41111]"
+                : "text-[#a16207]"
             }`}
           >
-            ⏱ 已思考 {hesitation.toFixed(1)} 秒
+            已思考 {hesitation.toFixed(1)} 秒
             {hesitation > latencyThreshold
               ? `——犹豫超 ${latencyThreshold} 秒会被记入报告,先开口再完善`
               : `(超过 ${latencyThreshold} 秒开始扣分)`}
           </div>
         )}
-        <div className="mb-2 flex items-center gap-1.5 text-xs text-[#5b6275]">
-          💡 结论先行,避免「其实 / 可能 / 大概」
+        <div className="mb-2 flex items-center gap-1.5 text-xs text-[#78716c]">
+          结论先行,避免「其实 / 可能 / 大概」
           <span className="chip">卡住时想想首页的应急锦囊</span>
         </div>
         <textarea
@@ -577,7 +577,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
           disabled={recording || thinking}
           placeholder={
             recording
-              ? "🎤 正在录音,你的回答会实时显示在这里…"
+              ? "正在录音,你的回答会实时显示在这里…"
               : "在这里输入你的回答…"
           }
           className="input text-sm leading-relaxed"
@@ -595,12 +595,12 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
               disabled={thinking}
               className={`flex h-10 w-10 items-center justify-center rounded-full border text-lg transition-all ${
                 recording
-                  ? "recording border-rose-500 bg-rose-500 text-white"
-                  : "border-[#262d3f] bg-[#191e2c]"
+                  ? "recording border-[#d41111] bg-[#d41111] text-white"
+                  : "border-[#e7e5e4] bg-[#ffffff]"
               }`}
               title={recording ? "点击结束录音" : "语音回答"}
             >
-              🎤
+              录
             </button>
           )}
           <button
@@ -614,7 +614,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
         {turns.length >= 3 && round < TOTAL_ROUNDS && (
           <button
             onClick={earlyFinish}
-            className="mt-3 w-full text-center text-xs text-[#5b6275] underline-offset-2 hover:underline"
+            className="mt-3 w-full text-center text-xs text-[#78716c] underline-offset-2 hover:underline"
           >
             提前结束面试,生成报告
           </button>
