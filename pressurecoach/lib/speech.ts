@@ -103,10 +103,10 @@ export function listChineseVoices(preferMale = false): SpeechSynthesisVoice[] {
     .sort((a, b) => voiceScore(b, preferMale) - voiceScore(a, preferMale));
 }
 
-/** 固定面试官音色:严肃男声优先(云希/云健/云扬),无男声时退回自然音色 */
+/** 固定面试官音色:试音页第 2 名(用户选定),列表不足时退回第 1 名 */
 export function pickInterviewerVoice(): SpeechSynthesisVoice | null {
   const vs = listChineseVoices(true);
-  return vs[0] ?? null;
+  return vs[1] ?? vs[0] ?? null;
 }
 
 /** 音色短名,如 "Xiaoxiao Online" */
