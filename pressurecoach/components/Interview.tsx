@@ -14,7 +14,7 @@ import {
 } from "@/lib/types";
 import { analyzeAnswer } from "@/lib/analysis";
 import { offlineNextQuestion } from "@/lib/offline";
-import { isSpeechSupported, SpeechInput } from "@/lib/speech";
+import { initVoices, isSpeechSupported, speak, SpeechInput, stopSpeaking } from "@/lib/speech";
 import {
   Intervention,
   interventionChance,
@@ -56,6 +56,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [hesitation, setHesitation] = useState(0);
   const [intervention, setIntervention] = useState<Intervention | null>(null);
+  const [autoSpeak, setAutoSpeak] = useState(true);
   const qStartRef = useRef<number>(Date.now());
   const responseStartedRef = useRef(false);
   const latencyRef = useRef(0);
@@ -192,6 +193,17 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     };
   }, []);
 
+  // 面试官语音:初始化中文音色 + 新题自动朗读
+  useEffect(() => {
+    initVoices();
+    return () => stopSpeaking();
+  }, []);
+  useEffect(() => {
+    if (question && !thinking && autoSpeak) {
+      speak(question.question);
+    }
+  }, [question, thinking, autoSpeak]);
+
   // 自动滚动
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -201,6 +213,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     const sp = speechRef.current;
     if (!sp) return;
     if (!recording) {
+      stopSpeaking();
       sp.start();
       setRecording(true);
     } else {
@@ -212,6 +225,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     if (!question || thinking) return;
     const text = answer.trim();
     if (!text && !timedOut) return;
+    stopSpeaking();
     if (recording) {
       speechRef.current?.stop();
       setRecording(false);
@@ -357,6 +371,20 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
             >
               {hr}
             </span>
+            <button
+              onClick={() => {
+                if (autoSpeak) stopSpeaking();
+                setAutoSpeak(!autoSpeak);
+              }}
+              className={`chip shrink-0 cursor-pointer transition-colors ${
+                autoSpeak
+                  ? "border-[#d41111]/40 text-[#d41111]"
+                  : "border-[#e7e5e4] text-[#78716c]"
+              }`}
+              title="面试官语音朗读开关"
+            >
+              朗读 {autoSpeak ? "开" : "关"}
+            </button>
           </div>
           <div className="mt-1.5 flex items-center gap-2">
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-[#e7e5e4]">
@@ -479,6 +507,13 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
                 {question.challenge && (
                   <span className="chip border-[#d41111]/50 text-[#d41111]">追问施压</span>
                 )}
+                <button
+                  onClick={() => speak(question.question)}
+                  className="text-xs text-[#d41111] underline-offset-2 transition-opacity hover:opacity-70"
+                  title="重读问题"
+                >
+                  重读
+                </button>
               </div>
               <div className="card mt-1 px-4 py-3 text-sm leading-relaxed">
                 {question.question}

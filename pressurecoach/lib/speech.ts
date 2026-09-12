@@ -71,3 +71,38 @@ export class SpeechInput {
     }
   }
 }
+
+/* ── 面试官语音(TTS)─────────────────────────────── */
+
+let currentVoice: SpeechSynthesisVoice | null = null;
+
+/** 初始化:挑一个中文音色(音色列表异步加载,监听变化) */
+export function initVoices() {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const pick = () => {
+    const voices = window.speechSynthesis.getVoices();
+    currentVoice =
+      voices.find((v) => v.lang === "zh-CN") ??
+      voices.find((v) => v.lang.toLowerCase().startsWith("zh")) ??
+      null;
+  };
+  pick();
+  window.speechSynthesis.addEventListener?.("voiceschanged", pick);
+}
+
+/** 朗读面试官的问题(会先停掉上一次朗读) */
+export function speak(text: string) {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "zh-CN";
+  u.rate = 1.05;
+  if (currentVoice) u.voice = currentVoice;
+  window.speechSynthesis.speak(u);
+}
+
+/** 停止朗读(提交回答、开始录音、离开面试舱时调用) */
+export function stopSpeaking() {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+}
