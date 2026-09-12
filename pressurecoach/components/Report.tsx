@@ -308,6 +308,31 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
         </section>
       )}
 
+      {/* 突发应对复盘 */}
+      {(report.interventionReview?.length ?? 0) > 0 && (
+        <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.68s" }}>
+          <h3 className="text-sm font-bold">突发应对复盘</h3>
+          <p className="mt-1 text-xs text-[#78716c]">
+            你遇到了这些突发状况——下次这样接:
+          </p>
+          <div className="mt-3 space-y-2">
+            {(report.interventionReview ?? []).map((r) => (
+              <div key={r.label} className="rounded-xl border border-[#e7e5e4] bg-[#f4f1ee] p-3">
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-[#d41111]/10 px-1.5 py-0.5 text-xs font-bold text-[#d41111]">
+                    {r.label}
+                  </span>
+                  <span className="text-xs text-[#78716c]">遇到 {r.count} 次</span>
+                </div>
+                <div className="mt-1.5 text-xs leading-relaxed text-[#44403c]">
+                  → {r.advice}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* 训练建议 */}
       <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.7s" }}>
         <h3 className="text-sm font-bold">针对性训练任务</h3>

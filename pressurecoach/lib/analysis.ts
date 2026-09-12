@@ -100,6 +100,63 @@ export function topFillersBreakdown(
     }));
 }
 
+/** 突发干预 → 应对方法(与应急锦囊联动) */
+export const INTERVENTION_ADVICE: Record<string, string> = {
+  突然打断: "被打断时不要慌:先一句话回应打断的点(「这个数据的具体口径是…」),再回到主线。打断不是让你重来,是让你证明自己在场。",
+  突然换题: "一句话收尾原题(「小结一下,核心是 X」),再干净接新题。跟随面试官的节奏本身就是加分项。",
+  要求举例: "别讲方法论,直接调出准备好的 STAR 故事(情境-任务-行动-结果),30 秒讲完一个。",
+  质疑否定: "先认同再区分:「您说得对,这个数字的口径是…,我的结论基于…」。把质疑翻译成口径问题,回到事实。",
+  长时间沉默: "沉默是面试官在等你补充——用复述问题 + 结构化缓冲:「您问的是 A 和 B 的关系,我先说结论…」,然后给一个完整收尾。",
+  完全不会的题: "三步:① 诚实划边界「这块我没深入做过」;② 迁移到已知领域「但我做过类似的 X」;③ 给思考框架「如果让我做,我会先…」。展示思路比硬答更值钱。",
+};
+
+/** 整场突发应对复盘:每种突发出现次数 + 下次怎么应对 */
+export function interventionReview(
+  turns: { interventions?: string[] }[]
+): { label: string; count: number; advice: string }[] {
+  const counts = new Map<string, number>();
+  for (const t of turns) {
+    for (const v of t.interventions ?? []) {
+      counts.set(v, (counts.get(v) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, count]) => ({
+      label,
+      count,
+      advice: INTERVENTION_ADVICE[label] ?? "回看回答,想想被中断时你的第一反应是什么。",
+    }));
+}
+
+/** 最弱维度 → 今日训练任务(健身 App 式训练计划) */
+export const DRILL_MAP: Record<string, { name: string; desc: string }> = {
+  表达稳定: {
+    name: "语气词净化训练",
+    desc: "录一段自我介绍,每出现一个语气词就停下来重说该句,直到整段干净。",
+  },
+  逻辑组织: {
+    name: "结论先行练习",
+    desc: "连续回答 5 个问题,每个都先给结论再展开,训练「观点-论据-例证」结构。",
+  },
+  反应速度: {
+    name: "打断接龙",
+    desc: "每说 10 秒就被打断一次,3 秒内回到主线。专治开场犹豫和卡壳。",
+  },
+  压力恢复: {
+    name: "连续质疑训练",
+    desc: "接受 3 轮连环质疑,每次先停顿 2 秒再回答,练「先认同再区分」的接法。",
+  },
+  内容深度: {
+    name: "STAR 扩充训练",
+    desc: "把每段回答扩到 80 字以上,补全情境-任务-行动-结果四个环节。",
+  },
+  表达节奏: {
+    name: "限时表达",
+    desc: "60 秒说清一个观点,不多不少——练语速控制和重点取舍。",
+  },
+};
+
 export function findFillers(text: string): string[] {
   const found: string[] = [];
   for (const f of FILLER_WORDS) {
@@ -250,6 +307,7 @@ export function computeReport(turns: Turn[]): Report {
     )
     .map(({ t }) => t.responseLatencySec ?? 0);
   const recoverySec = recoveryLats.length ? Math.round(avg(recoveryLats) * 10) / 10 : null;
+  const intReview = interventionReview(turns);
 
   // 4) 逐轮压力指数 → 压力曲线 + 触发点
   const medWords = median(turns.map((t) => t.wordCount));
@@ -367,6 +425,7 @@ export function computeReport(turns: Turn[]): Report {
     hexagon,
     fillerBreakdown,
     recoverySec,
+    interventionReview: intReview,
     suggestions: suggestions.slice(0, 4),
   };
 }

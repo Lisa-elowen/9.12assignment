@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MODES, PERSONAS, SCENARIOS, Session } from "@/lib/types";
-import { levelName } from "@/lib/analysis";
+import { DRILL_MAP, levelName } from "@/lib/analysis";
 import { EMERGENCY_TIPS } from "@/lib/emergency";
 
 interface Props {
@@ -244,7 +244,6 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
 
   const navItems = [
     { label: "面试舱", action: () => onStart() },
-    { label: "理念", action: () => scrollTo("philosophy") },
     { label: "作品", action: () => scrollTo("gallery") },
     { label: "锦囊", action: () => scrollTo("tips") },
     { label: "历史", action: () => scrollTo("history") },
@@ -287,30 +286,32 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
 
       <main className="md:ml-24">
         {/* Hero */}
-        <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-20 md:flex-row md:px-14">
+        <section className="relative flex min-h-[90vh] flex-col items-center justify-center overflow-hidden px-6 py-14 md:flex-row md:px-14">
           <div className="hero-deco absolute top-0 right-0 hidden h-full w-1/2 opacity-50 lg:block" />
           <div className="flex w-full max-w-7xl flex-col items-center gap-12 lg:flex-row lg:items-start lg:justify-between">
             {/* 文案 */}
             <div className="flex flex-col items-center gap-8 lg:items-start">
               <div className="hidden flex-col items-center gap-6 lg:flex" style={{ writingMode: "vertical-rl" }}>
                 <h1 className="text-6xl font-bold leading-tight tracking-[0.12em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
-                  <CharTitle text="表达的金缮" />
+                  <CharTitle text="你知道自己会在哪个问题上失分" />
                 </h1>
                 <p className="mt-6 text-sm font-light tracking-[0.3em] text-[#78716c]">
-                  在失分里,找到修复的路径
+                  找到失分点,训练你在压力下稳定表达
                 </p>
               </div>
               <div className="flex flex-col items-center gap-6 text-center lg:hidden">
-                <h1 className="text-5xl font-bold leading-tight tracking-[0.08em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
-                  <CharTitle text="表达的金缮" />
+                <h1 className="text-4xl font-bold leading-tight tracking-[0.08em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
+                  <CharTitle text="你知道自己会在" />
+                  <CharTitle text="哪个问题上失分" delay={0.8} />
+                  <CharTitle text="吗?" delay={1.4} />
                 </h1>
                 <p className="text-sm font-light tracking-[0.3em] text-[#78716c]">
-                  在失分里,找到修复的路径
+                  找到失分点,训练你在压力下稳定表达
                 </p>
               </div>
               <p className="max-w-md text-center text-base leading-loose text-[#44403c] lg:text-left">
-                面试前,让 AI 模拟一场真实的高压面试。每一次卡顿、每一处语塞,
-                都被当作待修复的裂痕——训练不是追求无懈可击,而是在压力之下,依然保持自己的表达。
+                在正式面试前,让 AI 模拟一次真实高压面试——动态追问、突发打断、逐轮评分,
+                精确找到你被击穿的那一轮,并给出可执行的训练任务。
               </p>
               <button onClick={onStart} className="btn-primary text-base">
                 进入面试舱
@@ -330,31 +331,56 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
           </div>
         </section>
 
-        {/* 理念 */}
-        <section id="philosophy" className="reveal relative flex min-h-[60vh] items-center justify-center bg-white px-6 py-28">
-          <div className="reveal relative z-10 flex max-w-2xl flex-col items-center gap-10 text-center">
-            <h2 className="text-2xl font-normal leading-relaxed text-[#1c1917] md:text-3xl" style={{ fontFamily: "var(--font-display)" }}>
-              我们把每一次卡顿、每一处语塞,当作待修复的裂痕。
-              压力面试中崩掉的那句话,恰恰是下一次训练的开始。
-            </h2>
-            <div className="h-px w-16 bg-[#d41111]" />
-            <p className="max-w-md text-sm leading-loose text-[#78716c]">
-              以金缮之心面对面试——裂缝不是瑕疵,是被光照进来的地方。
-            </p>
-          </div>
-          <div className="pointer-events-none absolute left-10 top-14 select-none text-[180px] font-bold leading-none text-[#fafaf9]">
-            修
+        {/* 今日训练(健身 App 式每日计划) */}
+        <section className="reveal px-6 pb-4 md:px-14">
+          <div className="mx-auto max-w-7xl">
+            {(() => {
+              const latest = sessions[0];
+              let weakestLabel = "";
+              if (latest?.report.hexagon?.length) {
+                const hex = latest.report.hexagon;
+                weakestLabel = hex.reduce((a, b) => (b.value < a.value ? b : a)).label;
+              }
+              const drill = (weakestLabel && DRILL_MAP[weakestLabel]) || {
+                name: "打断接龙",
+                desc: "每说 10 秒就被打断一次,3 秒内回到主线——先完成第一场面试,拿到你的定制训练计划。",
+              };
+              return (
+                <div className="card flex flex-col items-start gap-3 p-6 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <span className="text-xs font-bold tracking-[0.25em] text-[#d41111]">TODAY</span>
+                    <div
+                      className="mt-1 text-xl font-medium text-[#1c1917]"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      今日训练:{drill.name}
+                      {weakestLabel && (
+                        <span className="ml-2 text-sm font-normal text-[#78716c]">
+                          (最弱维度:{weakestLabel})
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 max-w-xl text-sm leading-relaxed text-[#44403c]">
+                      {drill.desc}
+                    </div>
+                  </div>
+                  <button onClick={onStart} className="btn-primary shrink-0">
+                    开始训练
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </section>
 
         {/* 作品:产品画廊 */}
-        <section id="gallery" className="reveal bg-[#f4f1ee] px-6 py-24 md:px-14">
+        <section id="gallery" className="reveal bg-[#f4f1ee] px-6 py-14 md:px-14">
           <div className="mx-auto max-w-7xl">
             <div className="reveal flex flex-col gap-4 border-b border-[#d6d3d1] pb-6 md:flex-row md:items-end md:justify-between">
               <div>
                 <span className="text-xs font-bold tracking-[0.25em] text-[#d41111]">THE STUDIO</span>
                 <h2 className="mt-2 text-4xl font-medium text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
-                  六件作品
+                  四件作品
                 </h2>
               </div>
               <button onClick={onStart} className="group flex items-center gap-2 text-sm font-bold tracking-[0.1em] text-[#78716c] transition-colors hover:text-[#d41111]">
@@ -362,7 +388,7 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
                 <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
               </button>
             </div>
-            <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3" style={{ gridAutoRows: "220px" }}>
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" style={{ gridAutoRows: "220px" }}>
               <GalleryCard title="面试舱" desc="六轮动态追问,实时突发干预" onClick={onStart} clip="clip-rough-1" wide>
                 <MiniChat />
               </GalleryCard>
@@ -381,34 +407,12 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
                   ))}
                 </div>
               </GalleryCard>
-              <GalleryCard title="应急锦囊" desc="被问到不会的问题,怎么办" onClick={() => scrollTo("tips")} clip="clip-rough-1">
-                <div className="flex h-full flex-col justify-center gap-2 p-6 text-sm text-[#44403c]">
-                  <div>不会的题 → 划边界 · 迁移 · 给框架</div>
-                  <div>被质疑 → 先认同,再区分口径</div>
-                  <div>突然换题 → 一句话收尾,干净接新</div>
-                </div>
-              </GalleryCard>
-              <GalleryCard title="训练历史" desc="每次体检都有迹可循,可回放" onClick={() => scrollTo("history")} clip="clip-rough-3">
-                <div className="flex h-full flex-col justify-center gap-2 p-6">
-                  {sessions.slice(0, 3).map((s) => (
-                    <div key={s.id} className="flex items-center justify-between border-b border-[#e7e5e4] pb-1 text-xs">
-                      <span className="text-[#1c1917]">
-                        {SCENARIOS[s.scenario].name} · {MODES[s.mode].name}
-                      </span>
-                      <span className="font-bold text-[#d41111]">{s.report.overall}</span>
-                    </div>
-                  ))}
-                  {sessions.length === 0 && (
-                    <div className="text-xs text-[#78716c]">尚无记录——从第一场面试开始。</div>
-                  )}
-                </div>
-              </GalleryCard>
             </div>
           </div>
         </section>
 
         {/* 应急锦囊(可展开) */}
-        <section id="tips" className="reveal px-6 py-24 md:px-14">
+        <section id="tips" className="reveal px-6 py-14 md:px-14">
           <div className="mx-auto max-w-4xl">
             <div className="reveal">
               <span className="text-xs font-bold tracking-[0.25em] text-[#d41111]">EMERGENCY</span>
@@ -417,21 +421,29 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
               </h2>
               <p className="mt-3 text-sm text-[#78716c]">突发状况的应对——点开任意一条。</p>
             </div>
-            <div className="mt-10 space-y-3">
+            <div className="mt-6 space-y-3">
               {EMERGENCY_TIPS.map((t, i) => {
                 const open = openTip === i;
                 return (
-                  <div key={t.situation} className={`reveal card ${open ? "tip-open" : ""}`}>
+                  <div key={t.situation} className="reveal card overflow-hidden">
                     <button
                       onClick={() => setOpenTip(open ? null : i)}
-                      className="flex w-full items-center gap-4 p-5 text-left"
+                      className="flex w-full items-center gap-4 p-4 text-left"
                     >
                       <span className="font-bold text-[#d41111]">{String(i + 1).padStart(2, "0")}</span>
                       <span className="flex-1 font-medium text-[#1c1917]">{t.situation}</span>
-                      <span className="tip-caret">+</span>
+                      <span
+                        className="tip-caret"
+                        style={{ transform: open ? "rotate(45deg)" : "none" }}
+                      >
+                        +
+                      </span>
                     </button>
-                    <div className="tip-panel">
-                      <div className="px-5 pb-5 pl-13 text-sm leading-loose text-[#44403c]" style={{ paddingLeft: "3.25rem" }}>
+                    <div
+                      className="overflow-hidden transition-all duration-500"
+                      style={{ maxHeight: open ? 240 : 0, opacity: open ? 1 : 0 }}
+                    >
+                      <div className="px-5 pb-5 text-sm leading-loose text-[#44403c]" style={{ paddingLeft: "3.25rem" }}>
                         {t.action}
                       </div>
                     </div>

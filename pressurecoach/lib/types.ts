@@ -94,6 +94,7 @@ export interface Report {
   hexagon?: { label: string; value: number }[]; // 六维能力雷达图数据(旧存档可能没有)
   fillerBreakdown?: { word: string; count: number; advice: string }[]; // 高频语气词明细(旧存档可能没有)
   recoverySec?: number | null; // 被打断/被质疑后的平均恢复开口时长(秒)
+  interventionReview?: { label: string; count: number; advice: string }[]; // 突发应对复盘(旧存档可能没有)
   suggestions: string[];
 }
 
