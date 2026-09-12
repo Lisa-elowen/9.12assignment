@@ -71,6 +71,9 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const latencyRef = useRef(0);
   const speechRef = useRef<SpeechInput | null>(null);
   const recordingRef = useRef(false);
+  const answerRef = useRef("");
+  const submittingRef = useRef(false);
+  const thinkingRef = useRef(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const interventionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interventionLogRef = useRef<string[]>([]);
@@ -185,6 +188,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
       const sp = new SpeechInput();
       const END_MARKERS = ["回答完毕", "回答完了", "以上", "就这样", "完毕", "说完了"];
       sp.onUpdate = (text) => {
+        answerRef.current = text;
         if (text.trim()) markResponseStarted();
         setAnswer(text);
         // 结束语 → 立即提交;否则停顿 3 秒视为说完,自动提交(真实面试里面试官会接话)
@@ -196,13 +200,30 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
           return;
         }
         silenceTimerRef.current = setTimeout(() => {
-          if (speechRef.current && recordingRef.current) {
+          if (recordingRef.current && !submittingRef.current) {
             doSubmitRef.current(false);
           }
         }, 3000);
       };
-      sp.onEnd = () => setRecording(false);
-      sp.onError = (msg) => setSpeechError(msg);
+      // 识别自然结束(说完自动停止/用户手动停止)= 回答完毕 → 自动提交。
+      // Chrome 常在停顿后自己结束识别,这比 3 秒计时更可靠。
+      sp.onEnd = () => {
+        setRecording(false);
+        recordingRef.current = false;
+        if (
+          !submittingRef.current &&
+          answerRef.current.trim() &&
+          !thinkingRef.current
+        ) {
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          doSubmitRef.current(false);
+        }
+      };
+      sp.onError = (msg) => {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        recordingRef.current = false;
+        setSpeechError(msg);
+      };
       speechRef.current = sp;
     }
     return () => {
@@ -260,6 +281,11 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [turns, question, thinking, answer]);
 
+  // ref 镜像:让语音回调拿到最新状态
+  useEffect(() => {
+    thinkingRef.current = thinking;
+  }, [thinking]);
+
   const toggleRecord = () => {
     const sp = speechRef.current;
     if (!sp) return;
@@ -275,9 +301,10 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   };
 
   const doSubmit = async (timedOut = false) => {
-    if (!question || thinking) return;
+    if (!question || thinking || submittingRef.current) return;
     const text = answer.trim();
     if (!text && !timedOut) return;
+    submittingRef.current = true;
     stopSpeaking();
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     if (recording) {
@@ -344,7 +371,9 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     const newTurns = [...turns, turn];
     setTurns(newTurns);
     setAnswer("");
+    answerRef.current = "";
     if (newTurns.length >= TOTAL_ROUNDS) {
+      submittingRef.current = false;
       onFinish(newTurns, usedAI);
       return;
     }
@@ -352,6 +381,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     const q = await fetchQuestion(newTurns);
     setQuestion(q);
     setThinking(false);
+    submittingRef.current = false;
     qStartRef.current = Date.now();
     responseStartedRef.current = false;
     setHesitation(0);
@@ -668,6 +698,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
           value={answer}
           onChange={(e) => {
             if (recording) return;
+            answerRef.current = e.target.value;
             if (e.target.value.trim()) markResponseStarted();
             setAnswer(e.target.value);
           }}
