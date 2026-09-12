@@ -161,7 +161,11 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
       fillerCount: m.fillerCount,
       fillerRatio: m.fillerRatio,
       hasStructure: m.hasStructure,
-      logicScore: empty ? 2 : (question.logicScore ?? m.logicScore),
+      logicScore: empty
+        ? 2
+        : timedOut
+        ? Math.min(question.logicScore ?? m.logicScore, 6)
+        : (question.logicScore ?? m.logicScore),
       note: empty
         ? "超时未作答"
         : timedOut

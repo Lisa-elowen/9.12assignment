@@ -120,8 +120,12 @@ export function computeReport(turns: Turn[]): Report {
   const early = turns.slice(0, 3);
   const late = turns.slice(3);
 
-  const earlyFiller = avg(early.map((t) => t.fillerRatio));
-  const lateFiller = avg(late.map((t) => t.fillerRatio));
+  // 超时轮次按最差语言信号处理:时间压力下的组织失效
+  const effRatio = (t: Turn) =>
+    t.timedOut ? Math.max(t.fillerRatio, 0.12) : t.fillerRatio;
+
+  const earlyFiller = avg(early.map(effRatio));
+  const lateFiller = avg(late.map(effRatio));
   const earlyWords = avg(early.map((t) => t.wordCount));
   const lateWords = avg(late.map((t) => t.wordCount));
   const wordCollapse = Math.max(0, 1 - lateWords / Math.max(1, earlyWords));
@@ -157,7 +161,7 @@ export function computeReport(turns: Turn[]): Report {
   const medWords = median(turns.map((t) => t.wordCount));
   const pressure = turns.map((t, i) =>
     clamp(
-      t.fillerRatio * 220 +
+      effRatio(t) * 220 +
         Math.max(0, (medWords - t.wordCount) / Math.max(1, medWords)) * 60 +
         (i >= 3 ? 12 : 0) +
         (t.isChallenge ? 10 : 0) +
