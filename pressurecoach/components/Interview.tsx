@@ -202,19 +202,24 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
     };
   }, []);
 
-  // 面试官语音:加载中文音色(自然音色优先)+ 新题自动朗读
+  // 面试官语音:加载中文音色(压力模式男声优先,语气低沉急促)
   useEffect(() => {
-    const load = () => setVoices(listChineseVoices());
+    const load = () => setVoices(listChineseVoices(mode === "pressure"));
     load();
     window.speechSynthesis?.addEventListener?.("voiceschanged", load);
     return () => {
       window.speechSynthesis?.removeEventListener?.("voiceschanged", load);
       stopSpeaking();
     };
-  }, []);
+  }, [mode]);
   const speakCurrent = useCallback(
-    (text: string) => speak(text, voices[voiceIdx] ?? null),
-    [voices, voiceIdx]
+    (text: string) =>
+      speak(
+        text,
+        voices[voiceIdx] ?? null,
+        mode === "pressure" ? { pitch: 0.85, rate: 1.12 } : { pitch: 1, rate: 1.02 }
+      ),
+    [voices, voiceIdx, mode]
   );
   useEffect(() => {
     if (question && !thinking && autoSpeak) {
@@ -409,7 +414,11 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
                 onClick={() => {
                   const next = (voiceIdx + 1) % voices.length;
                   setVoiceIdx(next);
-                  speakCurrent(question?.question ?? "");
+                  speak(
+                    question?.question ?? "稳面。于压力之中,面不改色。",
+                    voices[next] ?? null,
+                    mode === "pressure" ? { pitch: 0.85, rate: 1.12 } : undefined
+                  );
                 }}
                 className="chip shrink-0 cursor-pointer transition-colors hover:border-[#d41111]/50 hover:text-[#d41111]"
                 title="切换面试官音色(点击试听)"

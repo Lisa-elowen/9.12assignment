@@ -1,4 +1,4 @@
-# Product Memo · PressureCoach(压力面)
+# Product Memo · 稳面(PressureCoach)
 
 > 16 小时项目挑战作品 · 2026-09-12 · 题目:AI 模拟面试官
 > 产品定位:在正式面试前,让 AI 模拟一场真实高压面试,找到失分点,训练你在压力下稳定表达。

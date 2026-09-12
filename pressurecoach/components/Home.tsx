@@ -256,7 +256,7 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
         <button
           onClick={onStart}
           className="flex h-14 w-14 items-center justify-center bg-[#d41111] text-lg font-bold text-white transition-transform duration-300 hover:rotate-3 hover:scale-95"
-          aria-label="压力面"
+          aria-label="稳面"
         >
           压
         </button>
@@ -278,7 +278,7 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
         <button onClick={onStart} className="flex h-10 w-10 items-center justify-center bg-[#d41111] text-sm font-bold text-white">
           压
         </button>
-        <span className="text-sm font-bold tracking-[0.2em] text-[#1c1917]">压力面</span>
+        <span className="text-sm font-bold tracking-[0.2em] text-[#1c1917]">稳面</span>
         <button onClick={onStart} className="btn-primary !px-4 !py-1.5 !text-xs">
           开始
         </button>
@@ -292,26 +292,24 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
             {/* 文案 */}
             <div className="flex flex-col items-center gap-8 lg:items-start">
               <div className="hidden flex-col items-center gap-6 lg:flex" style={{ writingMode: "vertical-rl" }}>
-                <h1 className="text-6xl font-bold leading-tight tracking-[0.12em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
-                  <CharTitle text="你知道自己会在哪个问题上失分" />
+                <h1 className="text-8xl font-bold leading-tight tracking-[0.2em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
+                  <CharTitle text="稳面" />
                 </h1>
-                <p className="mt-6 text-sm font-light tracking-[0.3em] text-[#78716c]">
-                  找到失分点,训练你在压力下稳定表达
+                <p className="mt-6 text-sm font-light tracking-[0.35em] text-[#78716c]">
+                  于压力之中,面不改色
                 </p>
               </div>
               <div className="flex flex-col items-center gap-6 text-center lg:hidden">
-                <h1 className="text-4xl font-bold leading-tight tracking-[0.08em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
-                  <CharTitle text="你知道自己会在" />
-                  <CharTitle text="哪个问题上失分" delay={0.8} />
-                  <CharTitle text="吗?" delay={1.4} />
+                <h1 className="text-6xl font-bold leading-tight tracking-[0.2em] text-[#1c1917]" style={{ fontFamily: "var(--font-display)" }}>
+                  <CharTitle text="稳面" />
                 </h1>
-                <p className="text-sm font-light tracking-[0.3em] text-[#78716c]">
-                  找到失分点,训练你在压力下稳定表达
+                <p className="text-sm font-light tracking-[0.35em] text-[#78716c]">
+                  于压力之中,面不改色
                 </p>
               </div>
               <p className="max-w-md text-center text-base leading-loose text-[#44403c] lg:text-left">
-                在正式面试前,让 AI 模拟一次真实高压面试——动态追问、突发打断、逐轮评分,
-                精确找到你被击穿的那一轮,并给出可执行的训练任务。
+                在正式面试前,让 AI 模拟一场真实高压面试——动态追问、突发打断、逐轮评分,
+                精确找到你被击穿的那一轮,并给出可执行的训练任务。在压力下,依然稳定地表达。
               </p>
               <button onClick={onStart} className="btn-primary text-base">
                 进入面试舱
@@ -517,8 +515,8 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
         <footer className="border-t border-[#e7e5e4] bg-[#fafaf9] px-6 py-14 md:px-14">
           <div className="mx-auto flex max-w-7xl flex-col gap-10 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center bg-[#d41111] text-xs font-bold text-white">压</div>
-              <span className="text-sm font-bold tracking-[0.15em] text-[#1c1917]">压力面 · PRESSURE COACH</span>
+              <div className="flex h-8 w-8 items-center justify-center bg-[#d41111] text-xs font-bold text-white">稳</div>
+              <span className="text-sm font-bold tracking-[0.15em] text-[#1c1917]">稳面 · AI 压力面试教练</span>
             </div>
             <p className="max-w-xs text-sm leading-relaxed text-[#78716c]">
               修复压力下的表达,庆祝每一次卡顿带来的进步。十六小时项目挑战作品。
@@ -530,7 +528,7 @@ export function Home({ sessions, onStart, onViewSession }: Props) {
             </div>
           </div>
           <div className="mx-auto mt-14 flex max-w-7xl items-center justify-between border-t border-[#e7e5e4] pt-6 text-xs text-[#a8a29e]">
-            <p>压力面 · 表达的金缮</p>
+            <p>稳面 · 于压力之中,面不改色</p>
             <p>数据仅保存在你的浏览器本地,不会上传。</p>
           </div>
         </footer>

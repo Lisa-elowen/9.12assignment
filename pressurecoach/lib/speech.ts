@@ -79,22 +79,28 @@ const GOOD_VOICES = [
   "yunfeng", "yunhao", "yunxia", "xiaobei", "natural", "online",
 ];
 const BAD_VOICES = ["huihui", "kangkang", "yaoyao", "tingting"];
+// 男声:压力面试更贴近"严肃面试官"
+const MALE_VOICES = ["yunxi", "yunjian", "yunyang", "yunfeng", "yunhao", "xiaoyi"];
+const FEMALE_VOICES = ["xiaoxiao", "xiaobei", "xiaochen", "huihui", "yaoyao", "tingting"];
 
-function voiceScore(v: SpeechSynthesisVoice): number {
+function voiceScore(v: SpeechSynthesisVoice, preferMale: boolean): number {
   const n = v.name.toLowerCase();
   if (BAD_VOICES.some((b) => n.includes(b))) return 0;
-  if (GOOD_VOICES.some((g) => n.includes(g))) return 3;
-  if (n.includes("online")) return 2;
-  return 1;
+  let s = GOOD_VOICES.some((g) => n.includes(g)) ? 3 : n.includes("online") ? 2 : 1;
+  if (preferMale) {
+    if (MALE_VOICES.some((m) => n.includes(m))) s += 2;
+    if (FEMALE_VOICES.some((f) => n.includes(f))) s -= 1;
+  }
+  return s;
 }
 
-/** 中文音色列表,自然音色排在前面(晓晓/云希等) */
-export function listChineseVoices(): SpeechSynthesisVoice[] {
+/** 中文音色列表;preferMale=true 时男声(严肃感)排前 */
+export function listChineseVoices(preferMale = false): SpeechSynthesisVoice[] {
   if (typeof window === "undefined" || !window.speechSynthesis) return [];
   return window.speechSynthesis
     .getVoices()
     .filter((v) => v.lang.toLowerCase().startsWith("zh"))
-    .sort((a, b) => voiceScore(b) - voiceScore(a));
+    .sort((a, b) => voiceScore(b, preferMale) - voiceScore(a, preferMale));
 }
 
 /** 音色短名,如 "Xiaoxiao Online" */
@@ -107,16 +113,31 @@ export function shortVoiceName(v: SpeechSynthesisVoice): string {
     .trim();
 }
 
-/** 朗读面试官的问题(会先停掉上一次朗读) */
-export function speak(text: string, voice?: SpeechSynthesisVoice | null) {
+/** 朗读面试官的问题(会先停掉上一次朗读)。opts 控制语气:压力模式低沉急促 */
+export function speak(
+  text: string,
+  voice?: SpeechSynthesisVoice | null,
+  opts?: { pitch?: number; rate?: number }
+) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  const ss = window.speechSynthesis;
+  ss.cancel();
+  try {
+    ss.resume?.();
+  } catch {
+    /* noop */
+  }
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "zh-CN";
-  u.rate = 1.02;
-  u.pitch = 1;
+  u.rate = opts?.rate ?? 1.02;
+  u.pitch = opts?.pitch ?? 1;
   if (voice) u.voice = voice;
-  window.speechSynthesis.speak(u);
+  // Chrome 已知问题:cancel 后立即 speak 会被吞;朗读结束后引擎可能停在 paused。
+  // 延迟一拍再播,并再次 resume 兜底。
+  window.setTimeout(() => {
+    if (ss.paused) ss.resume();
+    ss.speak(u);
+  }, 60);
 }
 
 /** 停止朗读(提交回答、开始录音、离开面试舱时调用) */
