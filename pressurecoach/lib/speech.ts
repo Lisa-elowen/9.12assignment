@@ -15,6 +15,7 @@ export class SpeechInput {
   private started = false;
   onUpdate: (text: string) => void = () => {};
   onEnd: () => void = () => {};
+  onError: (msg: string) => void = () => {};
 
   constructor() {
     const w = window as any;
@@ -33,9 +34,10 @@ export class SpeechInput {
       }
       this.onUpdate(this.final + interim);
     };
-    rec.onerror = () => {
+    rec.onerror = (e: any) => {
       this.started = false;
       this.onEnd();
+      this.onError(e?.error === "not-allowed" ? "麦克风权限被拒绝,请在浏览器地址栏允许麦克风" : "语音识别服务不可用(国内网络限制),请改用打字输入");
     };
     rec.onend = () => {
       if (this.started) {

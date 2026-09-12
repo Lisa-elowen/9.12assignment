@@ -64,6 +64,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   const [intervention, setIntervention] = useState<Intervention | null>(null);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [voiceName, setVoiceName] = useState("");
+  const [speechError, setSpeechError] = useState("");
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const qStartRef = useRef<number>(Date.now());
   const responseStartedRef = useRef(false);
@@ -183,6 +184,7 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
         setAnswer(text);
       };
       sp.onEnd = () => setRecording(false);
+      sp.onError = (msg) => setSpeechError(msg);
       speechRef.current = sp;
     }
     return () => {
@@ -605,6 +607,12 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
         {mode === "pressure" && timeLeft !== null && timeLeft <= 30 && timeLeft > 0 && (
           <div className="mb-1.5 text-center text-xs font-medium text-[#d41111]">
             时间不等人——先给结论,细节后补
+          </div>
+        )}
+        {/* 语音识别失败提示 */}
+        {speechError && (
+          <div className="mb-2 rounded-lg border border-[#a16207]/50 bg-[#a16207]/10 px-3 py-2 text-xs leading-relaxed text-[#a16207]">
+            {speechError}
           </div>
         )}
         {/* 突发干预:面试中的不可预测因素 */}
