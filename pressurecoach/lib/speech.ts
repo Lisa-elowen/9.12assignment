@@ -119,8 +119,10 @@ export function shortVoiceName(v: SpeechSynthesisVoice): string {
     .trim();
 }
 
-/** 朗读面试官的问题(会先停掉上一次朗读)。opts 控制语气:压力模式低沉急促 */
-export function speak(
+let audioEl: HTMLAudioElement | null = null;
+
+/** 浏览器语音合成(试音页与兜底共用) */
+export function speakBrowser(
   text: string,
   voice?: SpeechSynthesisVoice | null,
   opts?: { pitch?: number; rate?: number }
@@ -138,16 +140,55 @@ export function speak(
   u.rate = opts?.rate ?? 1.02;
   u.pitch = opts?.pitch ?? 1;
   if (voice) u.voice = voice;
-  // Chrome 已知问题:cancel 后立即 speak 会被吞;朗读结束后引擎可能停在 paused。
-  // 延迟一拍再播,并再次 resume 兜底。
   window.setTimeout(() => {
     if (ss.paused) ss.resume();
     ss.speak(u);
   }, 60);
 }
 
+/** 朗读面试官的问题。服务端 TTS(火山接入后启用)2.5s 内没响应就退回浏览器音色 */
+export async function speak(
+  text: string,
+  voice?: SpeechSynthesisVoice | null,
+  opts?: { pitch?: number; rate?: number }
+) {
+  if (typeof window === "undefined") return;
+  // 1) 服务端 TTS:真男声,跨浏览器一致(当前微软端点不稳定,火山 Key 到位后切换)
+  try {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), 2500);
+    const res = await fetch(`/api/tts?q=${encodeURIComponent(text)}`, {
+      signal: ctrl.signal,
+    });
+    window.clearTimeout(timer);
+    if (res.ok) {
+      const blob = await res.blob();
+      if (!blob.size) throw new Error("empty audio");
+      const url = URL.createObjectURL(blob);
+      if (audioEl) {
+        audioEl.pause();
+        URL.revokeObjectURL(audioEl.src);
+      }
+      audioEl = new Audio(url);
+      audioEl.playbackRate = opts?.rate ?? 1.02;
+      await audioEl.play().catch(() => {});
+      return;
+    }
+  } catch {
+    /* fall through */
+  }
+  // 2) 浏览器语音合成
+  speakBrowser(text, voice, opts);
+}
+
 /** 停止朗读(提交回答、开始录音、离开面试舱时调用) */
 export function stopSpeaking() {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  if (audioEl) {
+    audioEl.pause();
+    URL.revokeObjectURL(audioEl.src);
+    audioEl = null;
+  }
+  if (typeof window !== "undefined" && window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
 }

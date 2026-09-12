@@ -204,16 +204,8 @@ export function Interview({ scenario, mode, persona, resume, onFinish, onQuit }:
   // 面试官语音:固定严肃男声(不可切换——真实面试你没法换面试官);压力模式语气低沉急促
   useEffect(() => {
     const load = () => {
-      voiceRef.current = pickInterviewerVoice();
-      if (voiceRef.current) {
-        setVoiceName(
-          voiceRef.current.name
-            .replace(/^Microsoft /i, "")
-            .replace(/\(Natural\)/i, "")
-            .replace(/\s*-\s*Chinese.*$/i, "")
-            .trim()
-        );
-      }
+      voiceRef.current = pickInterviewerVoice(); // 仅作浏览器兜底
+      setVoiceName("云健 · 在线男声");
     };
     load();
     window.speechSynthesis?.addEventListener?.("voiceschanged", load);
