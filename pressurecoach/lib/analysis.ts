@@ -56,6 +56,50 @@ export interface AnswerMetrics {
   note: string;
 }
 
+/** 高频语气词 → 具体替换建议(面试表达训练的核心改法) */
+export const FILLER_ADVICE: Record<string, string> = {
+  然后: "用「接下来 / 其次」替代,或直接停顿 0.5 秒",
+  就是: "删掉「就是」,直接说出要表达的内容",
+  那个: "直接说出名词,「那个」会让面试官觉得你找不到词",
+  嗯: "用停顿代替「嗯」,沉默比语气词更有力量感",
+  额: "用停顿代替「额」,想清楚再开口",
+  其实: "删掉「其实」,直接给结论,语气更笃定",
+  我觉得: "「我觉得」削弱说服力,改用「我的判断是」或直接陈述",
+  可能: "模糊限定词削弱可信度,不确定就说「我的估计是」并给出理由",
+  大概: "给不出精确数字时,说「我记得是 X 左右,当时负责的是 Y」",
+  应该: "「应该」暴露不确定,替换为「我的做法是」",
+  好像: "「好像」暴露不确定,替换为「具体来说是」",
+  差不多: "面试官听「差不多」会追问,直接说数字或范围",
+  反正: "删掉「反正」,用结论句收尾",
+  怎么说: "直接说,这个口头禅会放大紧张感",
+  就是说: "删掉「就是说」,重复不如精炼",
+  对吧: "面试不是求认同,「对吧」换成「因此」",
+  这个: "直接指代具体内容,「这个」会让表达悬空",
+  然后呢: "自问自答会打断节奏,直接说下一层",
+  的话: "「如果…的话」可以省略「的话」,更干脆",
+  吧: "句尾「吧」会显得不自信,用句号收尾",
+};
+
+/** 统计整场面试的高频语气词(取前 4,附替换建议) */
+export function topFillersBreakdown(
+  turns: { answer: string }[]
+): { word: string; count: number; advice: string }[] {
+  const counts = new Map<string, number>();
+  for (const t of turns) {
+    for (const f of findFillers(t.answer)) {
+      counts.set(f, (counts.get(f) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([word, count]) => ({
+      word,
+      count,
+      advice: FILLER_ADVICE[word] ?? "回听录音,标记这个词出现的每一处",
+    }));
+}
+
 export function findFillers(text: string): string[] {
   const found: string[] = [];
   for (const f of FILLER_WORDS) {
@@ -155,7 +199,43 @@ export function computeReport(turns: Turn[]): Report {
     )
   );
 
-  const overall = Math.round(0.34 * stability + 0.36 * logic + 0.3 * recovery);
+  // 4) 反应速度:提问后犹豫越久,扣分越多(压力面试的核心信号)
+  const latencies = turns.map((t) => t.responseLatencySec ?? 0);
+  const avgLatency = avg(latencies);
+  const timeouts = turns.filter((t) => t.timedOut).length;
+  const reaction = Math.round(
+    clamp(96 - Math.max(0, avgLatency - 2.5) * 7 - timeouts * 12, 30, 96)
+  );
+
+  // 5) 内容深度:回答长度 + 结构化比例
+  const structRatio =
+    turns.filter((t) => t.hasStructure).length / Math.max(1, turns.length);
+  const depth = Math.round(
+    clamp(40 + avg(turns.map((t) => t.wordCount)) * 0.15 + structRatio * 25, 30, 96)
+  );
+
+  // 6) 表达节奏:语速(字/秒)——过快显慌乱,过慢显卡顿,黄金区间约 2.5-5.5
+  const cps = avg(
+    turns.map((t) => t.wordCount / Math.max(1, t.durationSec))
+  );
+  const rhythm = Math.round(clamp(96 - Math.abs(cps - 3.8) * 10, 30, 96));
+
+  const overall = Math.round(
+    0.2 * stability + 0.22 * logic + 0.15 * reaction + 0.15 * recovery + 0.14 * depth + 0.14 * rhythm
+  );
+
+  // 六维能力图(健身 App 式能力雷达)
+  const hexagon = [
+    { label: "表达稳定", value: stability },
+    { label: "逻辑组织", value: logic },
+    { label: "反应速度", value: reaction },
+    { label: "压力恢复", value: recovery },
+    { label: "内容深度", value: depth },
+    { label: "表达节奏", value: rhythm },
+  ];
+
+  // 高频语气词明细(带替换建议)
+  const fillerBreakdown = topFillersBreakdown(turns);
 
   // 4) 逐轮压力指数 → 压力曲线 + 触发点
   const medWords = median(turns.map((t) => t.wordCount));
@@ -241,6 +321,15 @@ export function computeReport(turns: Turn[]): Report {
       "存在超时未答完的轮次:练习「结论先行」——先给核心观点再展开,60 秒内说清要点"
     );
   }
+  if (avgLatency > 5) {
+    suggestions.push(
+      `平均犹豫 ${avgLatency.toFixed(1)} 秒才开口:练习「3 秒开场」——先复述问题关键词 + 一句结论,细节后补`
+    );
+  }
+  if (fillerBreakdown.length > 0) {
+    const top = fillerBreakdown[0];
+    suggestions.push(`高频语气词「${top.word}」共 ${top.count} 次:${top.advice}`);
+  }
   if (suggestions.length === 0) {
     suggestions.push("基础扎实:下一阶段挑战更高压的连续质疑训练,把稳定输出变成肌肉记忆");
   }
@@ -256,6 +345,8 @@ export function computeReport(turns: Turn[]): Report {
     trigger,
     crashQuote,
     curve,
+    hexagon,
+    fillerBreakdown,
     suggestions: suggestions.slice(0, 4),
   };
 }

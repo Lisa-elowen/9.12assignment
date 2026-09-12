@@ -37,13 +37,27 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
   const [usedAI, setUsedAI] = useState(true);
   const [offlineNotice, setOfflineNotice] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [hesitation, setHesitation] = useState(0);
   const qStartRef = useRef<number>(Date.now());
+  const responseStartedRef = useRef(false);
+  const latencyRef = useRef(0);
   const speechRef = useRef<SpeechInput | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const round = turns.length + 1;
   const sc = SCENARIOS[scenario];
   const md = MODES[mode];
+  // 犹豫阈值:超过即被扣分(压力模式更严)
+  const latencyThreshold = mode === "pressure" ? 3 : 5;
+
+  // 首次输入(打字或语音)即记下犹豫时长
+  const markResponseStarted = useCallback(() => {
+    if (!responseStartedRef.current) {
+      responseStartedRef.current = true;
+      latencyRef.current = (Date.now() - qStartRef.current) / 1000;
+      setHesitation(latencyRef.current);
+    }
+  }, []);
 
   const fetchQuestion = useCallback(
     async (prevTurns: Turn[]): Promise<NextQ> => {
@@ -99,6 +113,8 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
         setQuestion(q);
         setThinking(false);
         qStartRef.current = Date.now();
+        responseStartedRef.current = false;
+        setHesitation(0);
       }
     })();
     return () => {
@@ -110,7 +126,10 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
   useEffect(() => {
     if (isSpeechSupported()) {
       const sp = new SpeechInput();
-      sp.onUpdate = (text) => setAnswer(text);
+      sp.onUpdate = (text) => {
+        if (text.trim()) markResponseStarted();
+        setAnswer(text);
+      };
       sp.onEnd = () => setRecording(false);
       speechRef.current = sp;
     }
@@ -151,26 +170,45 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
     const durationSec = timedOut
       ? limit
       : Math.max(1, (Date.now() - qStartRef.current) / 1000);
+    // 犹豫时长:开口/落笔前的时间,超时按满时长计
+    const latencySec = timedOut
+      ? limit
+      : responseStartedRef.current
+      ? Math.max(0, latencyRef.current)
+      : Math.max(1, (Date.now() - qStartRef.current) / 1000);
     const m = analyzeAnswer(text);
     const empty = !text;
+    const baseScore = empty
+      ? 2
+      : timedOut
+      ? Math.min(question.logicScore ?? m.logicScore, 6)
+      : (question.logicScore ?? m.logicScore);
+    // 愣神扣分:超过阈值后每多 1 秒扣 0.4,上限 2 分
+    const latPenalty = Math.min(
+      2,
+      Math.max(0, (latencySec - latencyThreshold) * 0.4)
+    );
+    const logicScore =
+      Math.round(Math.max(1, Math.min(10, baseScore - latPenalty)) * 10) / 10;
+    const latencyNote =
+      latencySec > latencyThreshold && !timedOut
+        ? `开场犹豫 ${latencySec.toFixed(1)} 秒;`
+        : "";
     const turn: Turn = {
       question: question.question,
       answer: text,
       durationSec,
+      responseLatencySec: latencySec,
       wordCount: m.wordCount,
       fillerCount: m.fillerCount,
       fillerRatio: m.fillerRatio,
       hasStructure: m.hasStructure,
-      logicScore: empty
-        ? 2
-        : timedOut
-        ? Math.min(question.logicScore ?? m.logicScore, 6)
-        : (question.logicScore ?? m.logicScore),
+      logicScore,
       note: empty
         ? "超时未作答"
         : timedOut
         ? `超时未答完:${m.note}`
-        : (question.note ?? m.note),
+        : latencyNote + (question.note ?? m.note),
       tag: question.tag,
       isChallenge: question.challenge,
       timedOut,
@@ -187,6 +225,8 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
     setQuestion(q);
     setThinking(false);
     qStartRef.current = Date.now();
+    responseStartedRef.current = false;
+    setHesitation(0);
   };
 
   const submit = () => doSubmit(false);
@@ -211,6 +251,17 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
+
+  // 犹豫计时:题目出现后未开口的时间,每 0.1s 刷新
+  useEffect(() => {
+    if (!question || thinking || answer.trim() || responseStartedRef.current) {
+      return;
+    }
+    const iv = setInterval(() => {
+      setHesitation((Date.now() - qStartRef.current) / 1000);
+    }, 100);
+    return () => clearInterval(iv);
+  }, [question, thinking, answer]);
 
   const earlyFinish = () => {
     if (turns.length >= 3) onFinish(turns, usedAI);
@@ -372,12 +423,31 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
             ⏳ 时间不等人——先给结论,细节后补
           </div>
         )}
+        {/* 犹豫计时:开口前的沉默会被记录并扣分 */}
+        {!answer.trim() && !recording && hesitation >= 0.5 && (
+          <div
+            className={`mb-1.5 flex items-center justify-center gap-1.5 text-xs font-medium ${
+              hesitation > latencyThreshold
+                ? "animate-pulse text-rose-400"
+                : "text-amber-400"
+            }`}
+          >
+            ⏱ 已思考 {hesitation.toFixed(1)} 秒
+            {hesitation > latencyThreshold
+              ? `——犹豫超 ${latencyThreshold} 秒会被记入报告,先开口再完善`
+              : `(超过 ${latencyThreshold} 秒开始扣分)`}
+          </div>
+        )}
         <div className="mb-2 text-xs text-[#5b6275]">
           💡 保持「结论先行」,避免「其实 / 可能 / 大概」
         </div>
         <textarea
           value={answer}
-          onChange={(e) => !recording && setAnswer(e.target.value)}
+          onChange={(e) => {
+            if (recording) return;
+            if (e.target.value.trim()) markResponseStarted();
+            setAnswer(e.target.value);
+          }}
           rows={3}
           disabled={recording || thinking}
           placeholder={

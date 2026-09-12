@@ -40,6 +40,7 @@ export interface Turn {
   question: string;
   answer: string;
   durationSec: number;
+  responseLatencySec: number; // 提问到首次开口/输入的犹豫时长
   wordCount: number;
   fillerCount: number;
   fillerRatio: number;
@@ -65,6 +66,8 @@ export interface Report {
   trigger: { round: number; label: string; detail: string } | null;
   crashQuote: { round: number; text: string; fillers: string[] } | null;
   curve: { round: number; label: string; value: number }[];
+  hexagon?: { label: string; value: number }[]; // 六维能力雷达图数据(旧存档可能没有)
+  fillerBreakdown?: { word: string; count: number; advice: string }[]; // 高频语气词明细(旧存档可能没有)
   suggestions: string[];
 }
 

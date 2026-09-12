@@ -45,27 +45,56 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-function MetricRow({
-  name,
-  score,
-  comment,
-}: {
-  name: string;
-  score: number;
-  comment: string;
-}) {
-  const color = score >= 75 ? "bg-emerald-400" : score >= 60 ? "bg-amber-400" : "bg-rose-500";
+function HexagonChart({ data }: { data: { label: string; value: number }[] }) {
+  const cx = 130;
+  const cy = 105;
+  const R = 82;
+  const labelR = R + 18;
+  const n = data.length;
+  const pt = (i: number, r: number) => {
+    const ang = ((-90 + (i * 360) / n) * Math.PI) / 180;
+    return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)] as const;
+  };
+  const poly = (r: number) => data.map((_, i) => pt(i, r).join(",")).join(" ");
+  const valuePts = data
+    .map((d, i) => pt(i, (R * Math.max(0, Math.min(100, d.value))) / 100).join(","))
+    .join(" ");
   return (
-    <div className="card p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold">{name}</span>
-        <span className="text-lg font-bold">{score}</span>
-      </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#262d3f]">
-        <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${score}%` }} />
-      </div>
-      <div className="mt-1.5 text-xs text-[#8b93a7]">{comment}</div>
-    </div>
+    <svg viewBox="0 0 260 215" className="mx-auto w-full max-w-sm">
+      {[1 / 3, 2 / 3, 1].map((f) => (
+        <polygon key={f} points={poly(R * f)} fill="none" stroke="#262d3f" strokeWidth="1" />
+      ))}
+      {data.map((_, i) => {
+        const [x, y] = pt(i, R);
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#262d3f" strokeWidth="1" />;
+      })}
+      <polygon
+        points={valuePts}
+        fill="rgba(244,63,94,0.18)"
+        stroke="#f43f5e"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      {data.map((d, i) => {
+        const [x, y] = pt(i, (R * Math.max(0, Math.min(100, d.value))) / 100);
+        return <circle key={i} cx={x} cy={y} r="3" fill="#f43f5e" />;
+      })}
+      {data.map((d, i) => {
+        const [x, y] = pt(i, labelR);
+        const anchor = Math.abs(x - cx) < 20 ? "middle" : x > cx ? "start" : "end";
+        return (
+          <text
+            key={i}
+            x={x}
+            y={y + 4}
+            textAnchor={anchor}
+            className="fill-[#8b93a7] text-[11px] font-medium"
+          >
+            {d.label} {d.value}
+          </text>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -92,27 +121,18 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
   const sc = SCENARIOS[scenario];
   const md = MODES[mode];
   const level = levelName(report.overall);
-
-  const comments: Record<string, string> = {
-    stability:
-      report.stability >= 80
-        ? "全程输出稳定,语言信号干净"
-        : report.stability >= 65
-        ? "前段稳定,追问后期出现波动"
-        : "压力下表达退化明显,模糊词激增",
-    logic:
-      report.logic >= 80
-        ? "逻辑组织清晰,结论先行"
-        : report.logic >= 65
-        ? "结构基本完整,偶有松散"
-        : "面对质疑时逻辑丢失,回答失焦",
-    recovery:
-      report.recovery >= 80
-        ? "恢复能力强,被打断后能迅速稳住"
-        : report.recovery >= 65
-        ? "可以恢复,但需要明显的时间"
-        : "一旦被挑战,难以回到正轨",
-  };
+  const hex = report.hexagon ?? [];
+  const fillerBreakdown = report.fillerBreakdown ?? [];
+  const weakest = hex.length
+    ? hex.reduce((a, b) => (b.value < a.value ? b : a))
+    : null;
+  const strongest = hex.length
+    ? hex.reduce((a, b) => (b.value > a.value ? b : a))
+    : null;
+  const avgLatency =
+    turns.length > 0
+      ? turns.reduce((s, t) => s + (t.responseLatencySec ?? 0), 0) / turns.length
+      : 0;
 
   return (
     <div className="mx-auto max-w-2xl px-5 pb-16">
@@ -143,7 +163,8 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
             </div>
             <div className="mt-1 text-sm text-[#8b93a7]">
               {turns.length} 轮问答 ·{" "}
-              {turns.reduce((s, t) => s + t.durationSec, 0).toFixed(0)} 秒
+              {turns.reduce((s, t) => s + t.durationSec, 0).toFixed(0)} 秒 · 平均开口犹豫{" "}
+              {avgLatency.toFixed(1)}s
               {turns.some((t) => t.timedOut) && (
                 <span className="ml-1 text-rose-400">
                   · {turns.filter((t) => t.timedOut).length} 轮超时
@@ -162,17 +183,46 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
         </div>
       </section>
 
-      {/* 三维能力 */}
-      <section className="mt-4 grid grid-cols-1 gap-3">
-        <div className="fade-up" style={{ animationDelay: "0.1s" }}>
-          <MetricRow name="① 表达稳定性" score={report.stability} comment={comments.stability} />
+      {/* 六维能力图(健身 App 式雷达) */}
+      <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.1s" }}>
+        <h3 className="text-sm font-bold">🧭 六维能力图</h3>
+        <p className="mt-1 text-xs text-[#8b93a7]">
+          仿健身 App 能力雷达:长板短板一眼看清。综合分 = 六维加权,而非只看面积。
+        </p>
+        <div className="mt-2">
+          <HexagonChart data={hex} />
         </div>
-        <div className="fade-up" style={{ animationDelay: "0.2s" }}>
-          <MetricRow name="② 逻辑组织能力" score={report.logic} comment={comments.logic} />
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {hex.map((d, i) => (
+            <div key={d.label} className="rounded-lg bg-[#0e1119] p-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#8b93a7]">
+                  {["①", "②", "③", "④", "⑤", "⑥"][i]} {d.label}
+                </span>
+                <span className="font-bold tabular-nums">{d.value}</span>
+              </div>
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[#262d3f]">
+                <div
+                  className={`h-full rounded-full ${
+                    d.value >= 75 ? "bg-emerald-400" : d.value >= 60 ? "bg-amber-400" : "bg-rose-500"
+                  }`}
+                  style={{ width: `${d.value}%` }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="fade-up" style={{ animationDelay: "0.3s" }}>
-          <MetricRow name="③ 压力恢复能力" score={report.recovery} comment={comments.recovery} />
-        </div>
+        {weakest && strongest && (
+          <div className="mt-3 rounded-lg border border-[#262d3f] bg-[#0e1119] p-3 text-xs leading-relaxed">
+            <span className="text-[#8b93a7]">🎯 优先补短板:</span>
+            <span className="ml-1 font-semibold text-rose-400">
+              {weakest.label}({weakest.value} 分)
+            </span>
+            <span className="ml-1 text-[#8b93a7]">
+              · 长板是{strongest.label}({strongest.value} 分),面试中把它作为安全区,先稳住再发挥
+            </span>
+          </div>
+        )}
       </section>
 
       {/* 压力曲线 */}
@@ -209,6 +259,31 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
           <p className="mt-2 text-xs text-[#8b93a7]">
             👁 面试官观察:{turns[report.crashQuote.round - 1]?.note}
           </p>
+        </section>
+      )}
+
+      {/* 高频语气词改造 */}
+      {fillerBreakdown.length > 0 && (
+        <section className="card fade-up mt-4 p-5" style={{ animationDelay: "0.65s" }}>
+          <h3 className="text-sm font-bold">🗣 高频语气词改造</h3>
+          <p className="mt-1 text-xs text-[#8b93a7]">
+            这些词在压力下最先暴露。逐个替换,表达立即变稳。
+          </p>
+          <div className="mt-3 space-y-2">
+            {fillerBreakdown.map((f) => (
+              <div key={f.word} className="rounded-xl border border-[#262d3f] bg-[#0e1119] p-3">
+                <div className="flex items-center gap-2">
+                  <span className="filler-hl rounded px-1.5 py-0.5 text-xs font-bold">
+                    「{f.word}」
+                  </span>
+                  <span className="text-xs text-[#5b6275]">出现 {f.count} 次</span>
+                </div>
+                <div className="mt-1.5 text-xs leading-relaxed text-[#c9cedd]">
+                  → {f.advice}
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
