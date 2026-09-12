@@ -48,6 +48,13 @@ export interface Turn {
   note: string; // AI/规则对回答的观察
   tag: string; // 本轮标签,如「数据质疑」
   isChallenge: boolean; // 是否为施压式追问
+  timedOut: boolean; // 是否限时内未完成回答
+}
+
+/** 每轮回答限时(秒):普通模式宽松,压力模式逐段收紧制造时间压迫 */
+export function timeLimitFor(mode: Mode, round: number): number {
+  if (mode === "normal") return 150;
+  return round <= 3 ? 90 : 60;
 }
 
 export interface Report {

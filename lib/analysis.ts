@@ -160,7 +160,8 @@ export function computeReport(turns: Turn[]): Report {
       t.fillerRatio * 220 +
         Math.max(0, (medWords - t.wordCount) / Math.max(1, medWords)) * 60 +
         (i >= 3 ? 12 : 0) +
-        (t.isChallenge ? 10 : 0),
+        (t.isChallenge ? 10 : 0) +
+        (t.timedOut ? 25 : 0),
       8,
       100
     )
@@ -176,13 +177,15 @@ export function computeReport(turns: Turn[]): Report {
   const trigger = {
     round: peakIdx + 1,
     label: peakTurn.tag,
-    detail: `第${peakIdx + 1}轮「${peakTurn.tag}」,模糊词占比 ${(
-      peakTurn.fillerRatio * 100
-    ).toFixed(0)}%,${
-      wordCollapse > 0.15
-        ? `回答长度较前3轮平均下降 ${Math.round(wordCollapse * 100)}%`
-        : "回答质量出现明显波动"
-    }。`,
+    detail: peakTurn.timedOut
+      ? `第${peakIdx + 1}轮「${peakTurn.tag}」,限时内未完成回答——时间压力下无法组织语言。`
+      : `第${peakIdx + 1}轮「${peakTurn.tag}」,模糊词占比 ${(
+          peakTurn.fillerRatio * 100
+        ).toFixed(0)}%,${
+          wordCollapse > 0.15
+            ? `回答长度较前3轮平均下降 ${Math.round(wordCollapse * 100)}%`
+            : "回答质量出现明显波动"
+        }。`,
   };
 
   // 5) 崩溃点:模糊词最多的回答
@@ -227,6 +230,11 @@ export function computeReport(turns: Turn[]): Report {
   if (minScore < 5) {
     suggestions.push(
       `存在明显崩溃点(「${trigger.label}」):针对该主题做 5 次专项追问训练,直到模糊词占比降到 3% 以下`
+    );
+  }
+  if (turns.some((t) => t.timedOut)) {
+    suggestions.push(
+      "存在超时未答完的轮次:练习「结论先行」——先给核心观点再展开,60 秒内说清要点"
     );
   }
   if (suggestions.length === 0) {

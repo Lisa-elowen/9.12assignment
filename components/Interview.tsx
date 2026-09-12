@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MODES, Mode, SCENARIOS, Scenario, TOTAL_ROUNDS, Turn } from "@/lib/types";
+import { MODES, Mode, SCENARIOS, Scenario, TOTAL_ROUNDS, timeLimitFor, Turn } from "@/lib/types";
 import { analyzeAnswer } from "@/lib/analysis";
 import { offlineNextQuestion } from "@/lib/offline";
 import { isSpeechSupported, SpeechInput } from "@/lib/speech";
@@ -36,6 +36,7 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
   const [recording, setRecording] = useState(false);
   const [usedAI, setUsedAI] = useState(true);
   const [offlineNotice, setOfflineNotice] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const qStartRef = useRef<number>(Date.now());
   const speechRef = useRef<SpeechInput | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -138,15 +139,20 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
     }
   };
 
-  const submit = async () => {
+  const doSubmit = async (timedOut = false) => {
+    if (!question || thinking) return;
     const text = answer.trim();
-    if (!text || !question || thinking) return;
+    if (!text && !timedOut) return;
     if (recording) {
       speechRef.current?.stop();
-      return;
+      setRecording(false);
     }
-    const durationSec = Math.max(1, (Date.now() - qStartRef.current) / 1000);
+    const limit = timeLimitFor(mode, round);
+    const durationSec = timedOut
+      ? limit
+      : Math.max(1, (Date.now() - qStartRef.current) / 1000);
     const m = analyzeAnswer(text);
+    const empty = !text;
     const turn: Turn = {
       question: question.question,
       answer: text,
@@ -155,10 +161,15 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
       fillerCount: m.fillerCount,
       fillerRatio: m.fillerRatio,
       hasStructure: m.hasStructure,
-      logicScore: question.logicScore ?? m.logicScore,
-      note: question.note ?? m.note,
+      logicScore: empty ? 2 : (question.logicScore ?? m.logicScore),
+      note: empty
+        ? "超时未作答"
+        : timedOut
+        ? `超时未答完:${m.note}`
+        : (question.note ?? m.note),
       tag: question.tag,
       isChallenge: question.challenge,
+      timedOut,
     };
     const newTurns = [...turns, turn];
     setTurns(newTurns);
@@ -173,6 +184,29 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
     setThinking(false);
     qStartRef.current = Date.now();
   };
+
+  const submit = () => doSubmit(false);
+
+  // 倒计时:题目出现即开始,制造时间压力
+  useEffect(() => {
+    if (!question || thinking) {
+      setTimeLeft(null);
+      return;
+    }
+    setTimeLeft(timeLimitFor(mode, turns.length + 1));
+    const iv = setInterval(() => {
+      setTimeLeft((t) => (t === null ? t : t - 1));
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [question, thinking, turns.length, mode]);
+
+  // 超时自动交卷——哪怕只写了半句,这就是压力
+  useEffect(() => {
+    if (timeLeft === 0) {
+      doSubmit(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft]);
 
   const earlyFinish = () => {
     if (turns.length >= 3) onFinish(turns, usedAI);
@@ -296,6 +330,44 @@ export function Interview({ scenario, mode, resume, onFinish, onQuit }: Props) {
 
       {/* 输入区 */}
       <div className="border-t border-[#262d3f] py-4">
+        {/* 倒计时压力条 */}
+        {timeLeft !== null && question && !thinking && (
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm">⏱</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#262d3f]">
+              <div
+                className={`h-full rounded-full transition-all duration-1000 ${
+                  timeLeft <= 10
+                    ? "bg-rose-500"
+                    : timeLeft <= 30
+                    ? "bg-amber-400"
+                    : "bg-sky-400"
+                }`}
+                style={{
+                  width: `${(timeLeft / timeLimitFor(mode, round)) * 100}%`,
+                }}
+              />
+            </div>
+            <span
+              className={`shrink-0 text-sm font-bold tabular-nums ${
+                timeLeft <= 10
+                  ? "animate-pulse text-rose-400"
+                  : timeLeft <= 30
+                  ? "text-amber-400"
+                  : "text-[#8b93a7]"
+              }`}
+            >
+              {Math.floor(timeLeft / 60)}:
+              {String(timeLeft % 60).padStart(2, "0")}
+            </span>
+            <span className="chip shrink-0">限时 {timeLimitFor(mode, round)}s</span>
+          </div>
+        )}
+        {mode === "pressure" && timeLeft !== null && timeLeft <= 30 && timeLeft > 0 && (
+          <div className="mb-1.5 text-center text-xs font-medium text-rose-400">
+            ⏳ 时间不等人——先给结论,细节后补
+          </div>
+        )}
         <div className="mb-2 text-xs text-[#5b6275]">
           💡 保持「结论先行」,避免「其实 / 可能 / 大概」
         </div>

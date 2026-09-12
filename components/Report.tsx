@@ -142,7 +142,13 @@ export function Report({ scenario, mode, turns, report, usedAI, onRestart, onHom
               等级:<span className="font-semibold text-[#e6e8ee]">{level}</span>
             </div>
             <div className="mt-1 text-sm text-[#8b93a7]">
-              {turns.length} 轮问答 · {turns.reduce((s, t) => s + t.durationSec, 0).toFixed(0)} 秒
+              {turns.length} 轮问答 ·{" "}
+              {turns.reduce((s, t) => s + t.durationSec, 0).toFixed(0)} 秒
+              {turns.some((t) => t.timedOut) && (
+                <span className="ml-1 text-rose-400">
+                  · {turns.filter((t) => t.timedOut).length} 轮超时
+                </span>
+              )}
             </div>
           </div>
         </div>
